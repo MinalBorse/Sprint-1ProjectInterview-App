@@ -2,8 +2,6 @@
 
 # ----- How each interviewer style should behave -----
 
-# A dictionary: each style name (the key) maps to a description (the value).
-# The system prompt uses the description, so the model knows how to behave.
 STYLE_GUIDANCE = {
     "Friendly": "warm and encouraging. Mention what went well before what to improve.",
     "Neutral": "professional and balanced. Polite and factual, without over-praising.",
@@ -12,16 +10,107 @@ STYLE_GUIDANCE = {
 }
 
 
-# ----- The system prompt: the instructions the model follows -----
+# ----- The five feedback techniques -----
+# Each function returns the "How to give feedback" part of the system prompt.
+# They all take the interview choices, so they all work the same way,
+# even though only some of them use the choices.
 
-def build_system_prompt(interview):
+
+def zero_shot(interview):
+    """Technique 1: an instruction only, with no examples. The baseline."""
+    return "When the candidate answers a question, give them feedback on their answer."
+
+
+def few_shot(interview):
+    """Technique 2: show two worked examples of good feedback."""
+    return """When the candidate answers a question, give feedback in the same format and
+tone as these examples. The examples show format and tone only. Never reuse their
+questions or answers.
+
+Example 1
+Question: Tell me about a time you disagreed with a teammate.
+Answer: Once I disagreed about which tool to use. We talked and used mine.
+Feedback:
+**What was good:** You chose a relevant situation.
+**What to improve:** You skipped how you resolved it and what the result was. Use the
+STAR method: Situation, Task, Action, Result.
+**Stronger answer:** In my last project, a teammate and I disagreed about which testing
+tool to use. I suggested we each list the pros and cons, and we tried both for a day.
+We chose the faster one, and the release went out on time.
+
+Example 2
+Question: What is the difference between a list and a tuple in Python?
+Answer: Tuples are faster.
+Feedback:
+**What was good:** Tuples can be slightly faster, so you're partly right.
+**What to improve:** The key difference is that tuples can't be changed after they're
+created (they're immutable), so they can be used as dictionary keys.
+**Stronger answer:** A list can be changed after it's created, and a tuple can't. I use
+tuples for fixed data, like coordinates, and lists for collections that grow."""
+
+
+def chain_of_thought(interview):
+    """Technique 3: reason step by step, and show a short assessment first."""
+    return f"""When the candidate answers a question, think it through step by step
+before giving feedback:
+1. What skill was the question testing?
+2. What would a strong answer include at {interview['seniority']} level?
+3. What did the candidate cover, miss, or get wrong?
+4. What single change would improve the answer most?
+
+Then reply in this order:
+**How I assessed your answer:** 2-4 short bullet points summarising steps 1 to 3.
+**Feedback:** your feedback, based on that assessment."""
+
+
+def role_persona(interview):
+    """Technique 4: a detailed character who speaks naturally."""
+    return f"""You are Sarah Chen, a hiring manager with 12 years of experience hiring for
+roles like {interview['job_title']}. You have interviewed hundreds of candidates, and
+you care about helping them improve.
+When the candidate answers a question, react the way you would across the table in a
+real interview: speak naturally in the first person, with no headings or bullet
+points, and give your honest feedback."""
+
+
+def structured_rubric(interview):
+    """Technique 5: a scoring rubric and a fixed reply template."""
+    return """When the candidate answers a question, score the answer with this rubric:
+5 = complete and well structured, with specific examples or correct technical detail
+4 = solid, with one small gap
+3 = relevant, but missing important points or specifics
+2 = vague, partly wrong, or mostly off the question
+1 = wrong, or no real attempt
+
+Reply in exactly this format:
+**Score:** X/5
+**What worked:** one or two sentences
+**What to improve:** one or two sentences
+**Model answer outline:** 2-4 bullet points (only if the score is 3 or lower)"""
+
+
+# A dictionary from each technique's name to its function.
+# The app's drop-down menu shows these names, in this order.
+TECHNIQUES = {
+    "Zero-shot": zero_shot,
+    "Few-shot": few_shot,
+    "Chain-of-thought": chain_of_thought,
+    "Role prompting": role_persona,
+    "Structured rubric": structured_rubric,
+}
+
+
+# ----- The system prompt -----
+
+
+def build_system_prompt(interview, technique=None):
     """Turn the user's choices into instructions for the model.
 
-    interview is a dictionary with the sidebar choices, like
-    {"job_title": "Junior Python Developer", "country": "Germany", ...}.
+    interview: a dictionary with the sidebar choices.
+    technique: a name from TECHNIQUES, used for feedback. None means no technique
+    section, which is what the question requests use.
     """
     # Country: adapt to real professional conventions, but never use stereotypes.
-    # This protects against bias, a known problem with LLMs (course Part 1).
     if interview["country"] == "Other":
         country_rule = "Use internationally common professional interview conventions."
     else:
@@ -31,24 +120,35 @@ def build_system_prompt(interview):
             "and never use stereotypes about nationalities."
         )
 
-    # An f-string (f"...") fills in the values between { } curly brackets.
-    # Triple quotes let the text run over several lines.
-    return f"""You are an experienced interviewer helping a candidate practise for a job interview.
+    # Part 1, the same for every technique: the job and the interview details.
+    prompt = f"""Your job is to help a candidate practise for a job interview.
 
 Interview details:
 - Job title: {interview['job_title']}
 - Professional area: {interview['area']}
 - Seniority: {interview['seniority']}
 - Interview type: {interview['interview_type']}
-- Your style: {STYLE_GUIDANCE[interview['style']]}
+- Interviewer style: {STYLE_GUIDANCE[interview['style']]}
 
-{country_rule}
+{country_rule}"""
 
-Only help with interview preparation. If asked for anything else, politely say
-that you can only help with interview practice."""
+    # Part 2, the only part that changes: the technique, if one was chosen.
+    if technique is not None:
+        technique_function = TECHNIQUES[technique]  # look up the function by its name
+        technique_text = technique_function(interview)  # call it to get the text
+        prompt += "\n\nHow to give feedback:\n" + technique_text
+
+    # Part 3, the same for every technique: the rule against misuse, last,
+    # so it's the final thing the model reads.
+    prompt += (
+        "\n\nOnly help with interview preparation. If asked for anything else, "
+        "politely say that you can only help with interview practice."
+    )
+    return prompt
 
 
 # ----- The user messages: what we ask for in each situation -----
+
 
 def expected_questions_request():
     """The request for the Expected questions tab."""
@@ -65,11 +165,11 @@ def new_question_request():
 
 
 def feedback_request(question, answer):
-    """The request for feedback on the candidate's answer."""
+    """The request for feedback. The technique in the system prompt decides how."""
     return f"""You asked me this interview question:
 {question}
 
 My answer:
 {answer}
 
-Give me feedback: what was good, what to improve, and an example of a stronger answer."""
+Please give me feedback on my answer."""

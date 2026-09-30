@@ -1,16 +1,27 @@
 """The web page: what the user sees and clicks."""
 
+# ----- Imports -----
+
 # Streamlit builds the web page. "as st" is a short nickname for it.
 import streamlit as st
 
-# Our own files: the model call, and the prompts.
+# Our own files.
+# llm.py: sends messages to the model.
 from llm import ask_model
+
+# prompts.py: the words we send to the model.
 from prompts import (
-    build_system_prompt,
-    expected_questions_request,
-    feedback_request,
-    new_question_request,
+    TECHNIQUES,  # the five feedback techniques, by name
+    build_system_prompt,  # builds the instructions from the user's choices
+    expected_questions_request,  # the request for the Expected questions tab
+    feedback_request,  # the request for feedback on an answer
+    new_question_request,  # the request for one practice question
 )
+
+# NEW (Step 5): guards.py, the security checks.
+# MAX_... are the length limits, and check_user_text is the guard itself.
+from guards import MAX_ANSWER_CHARS, MAX_JOB_TITLE_CHARS, check_user_text
+
 
 # ----- Page setup -----
 
@@ -28,7 +39,10 @@ with st.sidebar:
     st.header("Your interview")
 
     # A text box. The second value is what's in it at the start.
-    job_title = st.text_input("Job title", "Junior Python Developer")
+    # NEW (Step 5): max_chars stops the user typing more than the limit.
+    job_title = st.text_input(
+        "Job title", "Junior Python Developer", max_chars=MAX_JOB_TITLE_CHARS
+    )
 
     # Drop-down menus. index=1 selects the second option at the start (counting from 0).
     area = st.selectbox(
@@ -47,8 +61,28 @@ with st.sidebar:
     # Round buttons where only one can be chosen.
     style = st.radio("Interviewer style", ["Friendly", "Neutral", "Strict"], index=1)
 
+    # Developer settings, kept apart from the interview choices,
+    # because a normal user doesn't need to know what "few-shot" means.
+    # st.expander is a section that opens when clicked.
+    with st.expander("Developer settings"):
+        # list(TECHNIQUES) gives the five technique names as the menu options.
+        technique = st.selectbox("Feedback technique", list(TECHNIQUES))
 
-# ----- Build the system prompt from the choices -----
+
+# ----- NEW (Step 5) Security: check the job title before it goes into any prompt -----
+
+# The job title goes straight into the system prompt, so someone could type an attack
+# there instead of a real title. check_user_text returns None if it's fine,
+# or a message explaining the problem.
+job_title_problem = check_user_text(job_title, MAX_JOB_TITLE_CHARS)
+if job_title_problem:
+    st.error(f"Job title: {job_title_problem}")
+    # st.stop() ends this run of the script here. Nothing below is drawn,
+    # so no request can be sent to the model.
+    st.stop()
+
+
+# ----- Collect the choices -----
 
 # Put all the choices in one dictionary, so we can pass them around together.
 interview = {
@@ -59,24 +93,31 @@ interview = {
     "interview_type": interview_type,
     "style": style,
 }
-system_prompt = build_system_prompt(interview)
 
 
-def call_model(user_request):
-    """Send the system prompt plus one request to the model, and return the reply."""
+def call_model(user_request, technique=None):
+    """Send the system prompt plus one request to the model, and return the reply.
+
+    technique is only passed for feedback. The question requests leave it out,
+    so their system prompt has no technique section.
+    """
     messages = [
-        {"role": "system", "content": system_prompt},  # the instructions
-        {"role": "user", "content": user_request},  # what we're asking for
+        # The instructions: built from the choices, with or without a technique.
+        {"role": "system", "content": build_system_prompt(interview, technique)},
+        # What we're asking for this time.
+        {"role": "user", "content": user_request},
     ]
     return ask_model(messages)
 
 
 # ----- The two tabs -----
 
+# st.tabs returns one object per tab. "with" a tab puts content inside it.
 tab_expected, tab_practice = st.tabs(["Expected questions", "Practice"])
 
 
-# Tab 1: Expected questions
+# ----- Tab 1: Expected questions -----
+
 with tab_expected:
     st.write("See the questions you're likely to be asked, with a tip for each.")
 
@@ -89,7 +130,8 @@ with tab_expected:
         st.markdown(reply)
 
 
-# Tab 2: Practice
+# ----- Tab 2: Practice -----
+
 with tab_practice:
     st.write("Get a question, type your answer, and get feedback.")
 
@@ -99,6 +141,7 @@ with tab_practice:
     if "question" not in st.session_state:
         st.session_state.question = None
 
+    # Clicking "New question" asks the model for a question, and saves it.
     if st.button("New question"):
         with st.spinner("Choosing a question..."):
             st.session_state.question = call_model(new_question_request())
@@ -108,13 +151,21 @@ with tab_practice:
         st.markdown(f"**Question:** {st.session_state.question}")
 
         # A big text box for the answer.
-        answer = st.text_area("Your answer", height=200)
+        # NEW (Step 5): max_chars stops the user typing more than the limit.
+        answer = st.text_area("Your answer", height=200, max_chars=MAX_ANSWER_CHARS)
 
         if st.button("Get feedback"):
-            # .strip() removes spaces, so an answer of only spaces counts as empty.
-            if not answer.strip():
-                st.warning("Type your answer first.")
+            # NEW (Step 5): the guard checks for empty, too long, and attack phrases.
+            # This replaces the old "if not answer.strip()" check,
+            # because the guard's first check already handles empty answers.
+            problem = check_user_text(answer, MAX_ANSWER_CHARS)
+            if problem:
+                # Blocked: show the reason, and send nothing to the model.
+                st.warning(problem)
             else:
+                # Allowed: ask for feedback, using the chosen technique.
                 with st.spinner("Reading your answer..."):
-                    feedback = call_model(feedback_request(st.session_state.question, answer))
+                    feedback = call_model(
+                        feedback_request(st.session_state.question, answer), technique
+                    )
                 st.markdown(feedback)
