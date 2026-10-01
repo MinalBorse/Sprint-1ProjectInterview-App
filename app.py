@@ -11,6 +11,7 @@ from llm import ask_model
 
 # prompts.py: the words we send to the model.
 from prompts import (
+    KICKOFF_MESSAGE,
     TECHNIQUES,  # the five feedback techniques, by name
     build_system_prompt,  # builds the instructions from the user's choices
     expected_questions_request,  # the request for the Expected questions tab
@@ -20,7 +21,14 @@ from prompts import (
 
 # NEW (Step 5): guards.py, the security checks.
 # MAX_... are the length limits, and check_user_text is the guard itself.
-from guards import MAX_ANSWER_CHARS, MAX_COMPANY_CHARS, MAX_JOB_TITLE_CHARS, check_user_text
+from guards import (
+    MAX_ANSWER_CHARS,
+    MAX_COMPANY_CHARS,
+    MAX_INTERVIEW_ANSWERS,
+    MAX_JD_CHARS,
+    MAX_JOB_TITLE_CHARS,
+    check_user_text,
+)
 
 
 # ----- Page setup -----
@@ -51,6 +59,14 @@ with st.sidebar:
         "",
         max_chars=MAX_COMPANY_CHARS,
         placeholder="For example: SAP, Siemens, Zalando",
+    )
+
+        # NEW: an optional job description, so questions fit this exact position.
+    job_description = st.text_area(
+        "Job description (optional)",
+        height=150,
+        max_chars=MAX_JD_CHARS,
+        placeholder="Paste the job ad here",
     )
 
     # Drop-down menus. index=1 selects the second option at the start (counting from 0).
@@ -97,6 +113,15 @@ if company.strip():
     if company_problem:
         st.error(f"Company: {company_problem}")
         st.stop()
+
+    # NEW: an optional job description, so questions fit this exact position.
+    job_description = st.text_area(
+        "Job description (optional)",
+        height=150,
+        max_chars=MAX_JD_CHARS,
+        placeholder="Paste the job ad here",
+    )
+
 # ----- Collect the choices -----
 
 # Put all the choices in one dictionary, so we can pass them around together.
@@ -108,6 +133,7 @@ interview = {
     "country": country,
     "interview_type": interview_type,
     "style": style,
+    "job_description": job_description.strip(),  # NEW: empty text if none was pasted
 }
 
 
@@ -125,12 +151,20 @@ def call_model(user_request, technique=None):
     ]
     return ask_model(messages)
 
+def for_api(messages):
+    """Copy the messages with only "role" and "content".
 
+    The API doesn't accept extra keys like "hidden", which is only for our app.
+    """
+    # A "list comprehension": build a new list by going through the old one.
+    return [{"role": m["role"], "content": m["content"]} for m in messages]
 # ----- The two tabs -----
 
 # st.tabs returns one object per tab. "with" a tab puts content inside it.
-tab_expected, tab_practice = st.tabs(["Expected questions", "Practice"])
-
+#tab_expected, tab_practice = st.tabs(["Expected questions", "Practice"])
+tab_expected, tab_practice, tab_interview = st.tabs(
+    ["Expected questions", "Practice", "Mock interview"]
+)
 
 # ----- Tab 1: Expected questions -----
 
@@ -185,3 +219,65 @@ with tab_practice:
                         feedback_request(st.session_state.question, answer), technique
                     )
                 st.markdown(feedback)
+
+# ----- Tab 3: Mock interview (a chatbot that remembers the conversation) -----
+
+with tab_interview:
+    st.write("A full mock interview. The interviewer remembers the whole conversation.")
+
+    # The conversation, kept between reruns. An empty list means "not started".
+    if "chat" not in st.session_state:
+        st.session_state.chat = []
+
+    # Two buttons side by side. st.columns(2) splits the row into two halves.
+    col_start, col_restart = st.columns(2)
+
+    if col_start.button("Start interview"):
+        # Build the system prompt ONCE, from the current settings, so the whole
+        # interview follows the same rules. Then add the hidden kickoff message.
+        st.session_state.chat = [
+            {"role": "system", "content": build_system_prompt(interview, technique, chat=True)},
+            {"role": "user", "content": KICKOFF_MESSAGE, "hidden": True},
+        ]
+        with st.spinner("The interviewer is getting ready..."):
+            reply = ask_model(for_api(st.session_state.chat))
+        # Save the interviewer's reply, so it's part of the history from now on.
+        st.session_state.chat.append({"role": "assistant", "content": reply})
+
+    if col_restart.button("Restart"):
+        st.session_state.chat = []  # forget the whole conversation
+        st.rerun()  # draw the page again straight away
+
+    # Show the conversation so far, skipping what the user shouldn't see.
+    for message in st.session_state.chat:
+        if message["role"] == "system" or message.get("hidden"):
+            continue  # skip this one, and go on to the next message
+        # st.chat_message draws a chat bubble, with an icon for the role.
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Only show the answer box once the interview has started.
+    if st.session_state.chat:
+        # Count the real answers so far (not the hidden kickoff).
+        answers = [m for m in st.session_state.chat if m["role"] == "user" and not m.get("hidden")]
+
+        if len(answers) >= MAX_INTERVIEW_ANSWERS:
+            st.info("You've reached the answer limit for one interview. Click Restart to begin again.")
+        else:
+            # st.chat_input is a message box. It returns the text once you press Enter.
+            answer = st.chat_input("Type your answer", max_chars=MAX_ANSWER_CHARS)
+
+            if answer:
+                problem = check_user_text(answer, MAX_ANSWER_CHARS)
+                if problem:
+                    # Blocked: show why, and DON'T add it to the history,
+                    # or it would be resent to the model on every later turn.
+                    st.warning(problem)
+                else:
+                    # Add the answer, then send the WHOLE conversation.
+                    st.session_state.chat.append({"role": "user", "content": answer})
+                    with st.spinner("The interviewer is thinking..."):
+                        reply = ask_model(for_api(st.session_state.chat))
+                    st.session_state.chat.append({"role": "assistant", "content": reply})
+                    # Draw the page again, so the new messages appear in the chat above.
+                    st.rerun()

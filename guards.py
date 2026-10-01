@@ -11,6 +11,8 @@ import unicodedata
 MAX_ANSWER_CHARS = 2000  # the longest answer we accept
 MAX_JOB_TITLE_CHARS = 100  # the longest job title we accept
 MAX_COMPANY_CHARS = 100  # the longest company name we accept
+MAX_JD_CHARS = 5000  # job descriptions are long, so this limit is bigger
+MAX_INTERVIEW_ANSWERS = 15  # the most answers in one mock interview
 
 # ----- Common prompt-injection phrases -----
 # Each line is a regular expression (a text pattern).
