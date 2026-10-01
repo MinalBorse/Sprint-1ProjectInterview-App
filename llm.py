@@ -28,6 +28,20 @@ load_dotenv()
 MODEL = "openai/gpt-5-mini"
 
 
+# The models this app may use, with a label for the menu.
+# This is a dictionary:
+#   the key (left) is the OpenRouter "slug", which the API needs;
+#   the value (right) is the friendly name the user sees in the menu.
+MODELS = {
+    "openai/gpt-5-mini": "GPT-5 mini (default, balanced)",
+    "openai/gpt-5-nano": "GPT-5 nano (fastest, cheapest)",
+    "openai/gpt-5": "GPT-5 (strongest, may be blocked on the course account)",
+}
+
+# How much the model may think before answering, from least to most.
+# This is a list: the order here is the order shown in the menu.
+REASONING_EFFORTS = ["minimal", "low", "medium", "high"]
+
 # ----- Get the key, and stop early if it's missing -----
 
 # Ask the environment for the value called OPENROUTER_API_KEY.
@@ -51,22 +65,52 @@ client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
 # ----- The function the rest of the app will use -----
 
 
-def ask_model(messages):
-    """Send the conversation to the model and return its reply as text."""
-    # messages is a list of dictionaries, one per message, for example:
-    #   {"role": "system", "content": "You are an interviewer..."}
-    #   {"role": "user", "content": "My answer is..."}
+def ask_model(messages, model=MODEL, max_tokens=2000, reasoning_effort=None):
+    """Send the conversation to the model and return its reply as text.
 
-    # The actual API call: send the request to OpenRouter and wait for the answer.
-    response = client.chat.completions.create(
-        model=MODEL,  # which model to use
-        messages=messages,  # the conversation to send
-        max_tokens=2000,  # longest allowed output, including the model's hidden thinking
+    messages is a list of dictionaries, one per message, for example:
+      {"role": "system", "content": "You are an interviewer..."}
+      {"role": "user", "content": "My answer is..."}
+
+    model, max_tokens and reasoning_effort are optional. If a call doesn't
+    pass them, the defaults after "=" are used, so older code that only
+    passes messages (like redteam.py) works exactly as before.
+    reasoning_effort=None means "don't send it": the model uses its own default.
+    """
+    # ----- Build the request -----
+    # We build it as a dictionary first, so we can add optional settings
+    # only when they're set.
+    request = {
+        "model": model,  # which model to use
+        "messages": messages,  # the conversation to send
+        "max_tokens": max_tokens,  # longest output, including the hidden thinking
+    }
+
+    # Reasoning effort is an OpenRouter feature that the openai package doesn't
+    # know about. "extra_body" means: add this to the request exactly as it is.
+    # It's only added if an effort was chosen.
+    if reasoning_effort is not None:
+        request["extra_body"] = {"reasoning": {"effort": reasoning_effort}}
+
+    # ----- Send it -----
+    # "**request" unpacks the dictionary into named inputs. It's the same as
+    # writing create(model=..., messages=..., max_tokens=...), plus extra_body
+    # if it was added above.
+    response = client.chat.completions.create(**request)
+
+    # ----- A developer log -----
+    # Printed in the TERMINAL, not on the page, so you can compare settings.
+    # prompt_tokens: what we sent. completion_tokens: what came back,
+    # including the model's hidden reasoning, which is billed as output.
+    usage = response.usage
+    print(
+        f"[{model}, effort={reasoning_effort}, max_tokens={max_tokens}] "
+        f"input: {usage.prompt_tokens}, output: {usage.completion_tokens} tokens"
     )
 
-    # The response can hold several alternative answers, called "choices".
-    # We asked for one, so we take the first: [0] (Python counts from 0).
-    # .message.content is the text of that answer, which we hand back.
+    # ----- Return the reply -----
+    # The response can hold several answers, called "choices". We asked for
+    # one, so we take the first, [0]. .message.content is its text.
     return response.choices[0].message.content
 
 
