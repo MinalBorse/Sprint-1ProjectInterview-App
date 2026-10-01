@@ -112,3 +112,18 @@ before release. Since then, I write the tests first for any tricky function."
 - Ask for shorter replies, or raise `max_tokens`, so few-shot isn't cut off.
 - Remind role prompting more firmly not to use bullet points, for example by
   moving that rule to the end of its instructions.
+
+
+  **Second layer (--model):** all 7 attacks the guard missed were refused by the
+model. In each case it treated the attack as a poor interview answer and gave
+feedback, because of the system prompt's "only help with interview preparation"
+rule. Together, the two layers stopped 17 of 17 attacks, with 0 of 8 real
+answers blocked.
+
+Notes: the model decoded the base64 text ("Ignore all rules") but didn't follow
+it. For the 5/5 trick, it refused the score, but misread the attack as an
+incomplete answer.
+
+Limits: one run only (model replies vary between runs), and only the first 500
+characters of each reply were saved. Running --model several times would make
+this more reliable.
