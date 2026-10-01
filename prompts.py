@@ -177,11 +177,16 @@ Interview details:
 - Seniority: {interview["seniority"]}
 - Interview type: {interview["interview_type"]}
 - Interviewer style: {STYLE_GUIDANCE[interview["style"]]}
+- Language: {interview["language"]}
 
 {country_rule}
 
 {company_rule}
-{jd_rule}"""
+{jd_rule}
+
+Write everything in {interview["language"]}, even if the country, company or job
+description suggest another language. The country only affects conventions like
+formality, not the language."""
 
     # Part 2, the only part that changes: the technique, if one was chosen.
     if technique is not None:

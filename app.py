@@ -76,6 +76,11 @@ with st.sidebar:
     country = st.selectbox(
         "Country", ["Germany", "United Kingdom", "United States", "India", "Other"]
     )
+
+    # NEW: the interview language, chosen separately from the country,
+    # so an interview "in Germany" doesn't automatically become German.
+    language = st.selectbox("Interview language", ["English", "German"])
+
     interview_type = st.selectbox(
         "Interview type", ["Behavioural", "Technical", "Case study", "Mixed"]
     )
@@ -131,6 +136,7 @@ interview = {
     "interview_type": interview_type,
     "style": style,
     "job_description": job_description.strip(),  # NEW: empty text if none was pasted
+    "language": language,  # NEW
 }
 
 
