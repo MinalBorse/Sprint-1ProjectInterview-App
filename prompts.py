@@ -8,7 +8,15 @@ STYLE_GUIDANCE = {
     "Strict": "demanding and direct. Probe weak points and don't accept vague answers, "
     "while staying respectful.",
 }
+# ----- How long the feedback should be -----
 
+# Each choice (the key) maps to the instruction the model gets (the value).
+FEEDBACK_LENGTH = {
+    "Concise": "concise. Keep feedback to 2-4 sentences, focused on the single most "
+    "important point.",
+    "Detailed": "detailed. Give thorough feedback: what was strong, what was missing, "
+    "and an outline of a stronger answer.",
+}
 # ----- The mock interview (chat) -----
 
 # The hidden first message: the model needs something to reply to
@@ -177,6 +185,7 @@ Interview details:
 - Seniority: {interview["seniority"]}
 - Interview type: {interview["interview_type"]}
 - Interviewer style: {STYLE_GUIDANCE[interview["style"]]}
+- Feedback length: {FEEDBACK_LENGTH[interview["feedback_length"]]}
 - Language: {interview["language"]}
 
 {country_rule}
@@ -193,7 +202,14 @@ formality, not the language."""
         technique_function = TECHNIQUES[technique]  # look up the function by its name
         technique_text = technique_function(interview)  # call it to get the text
         prompt += "\n\nHow to give feedback:\n" + technique_text
-
+        # If the technique's format and the feedback length disagree (for example,
+        # Detailed vs the rubric's fixed template), the technique wins on format,
+        # and the length only decides how much to write. This keeps the techniques
+        # clearly different, so comparing them stays fair.
+        prompt += (
+            "\nIf this reply format clashes with the feedback length above, keep the "
+            "format, and use the length only to decide how much to write."
+        )
     # NEW: for the mock interview chat, add how the conversation should run.
     if chat:
         prompt += "\n\n" + INTERVIEW_FLOW

@@ -159,6 +159,7 @@ TEST_INTERVIEW = {
     "language": "English",
     "interview_type": "Behavioural",
     "style": "Neutral",
+    "feedback_length": "Concise",
 }
 
 # A question, as if the attack were typed as an answer to it.

@@ -91,7 +91,8 @@ with st.sidebar:
 
     # Round buttons where only one can be chosen.
     style = st.radio("Interviewer style", ["Friendly", "Neutral", "Strict"], index=1)
-
+    # How long the feedback should be. horizontal=True puts the choices side by side.
+    feedback_length = st.radio("Feedback length", ["Concise", "Detailed"], horizontal=True)
     # Developer settings, kept apart from the interview choices,
     # because a normal user doesn't need to know what "few-shot" means.
     # st.expander is a section that opens when clicked.
@@ -144,6 +145,7 @@ interview = {
     "style": style,
     "job_description": job_description.strip(),  # NEW: empty text if none was pasted
     "language": language,  # NEW
+    "feedback_length": feedback_length,
 }
 
 
