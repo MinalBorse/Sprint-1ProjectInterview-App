@@ -94,6 +94,9 @@ with st.sidebar:
     with st.expander("Developer settings"):
         # list(TECHNIQUES) gives the five technique names as the menu options.
         technique = st.selectbox("Feedback technique", list(TECHNIQUES))
+        # A developer tool, to see exactly what the model was told.
+        # st.checkbox returns True when ticked, and False when not.
+        show_prompt = st.checkbox("Show system prompts")
 
 
 # ----- NEW (Step 5) Security: check the job title before it goes into any prompt -----
@@ -225,6 +228,11 @@ with tab_practice:
                         feedback_request(st.session_state.question, answer), technique
                     )
                 st.markdown(feedback)
+                # Developer tool: show the exact system prompt that was sent.
+                if show_prompt:
+                    with st.expander("System prompt that was sent"):
+                        # st.code shows text exactly as it is, in a box, with a copy button.
+                        st.code(build_system_prompt(interview, technique))
 
 # ----- Tab 3: Mock interview (a chatbot that remembers the conversation) -----
 
@@ -261,6 +269,11 @@ with tab_interview:
         # st.chat_message draws a chat bubble, with an icon for the role.
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+            # Developer tool: the interview's system prompt is the first message in the chat.
+    # It's the version built at Start, so it shows the rules this interview really follows.
+    if show_prompt and st.session_state.chat:
+        with st.expander("System prompt for this interview"):
+            st.code(st.session_state.chat[0]["content"])
 
     # Only show the answer box once the interview has started.
     if st.session_state.chat:
