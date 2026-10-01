@@ -1,6 +1,8 @@
 """The web page: what the user sees and clicks."""
 
 # ----- Imports -----
+# Built into Python: turns a dictionary into JSON text, for the download button.
+import json
 
 # Streamlit builds the web page. "as st" is a short nickname for it.
 import streamlit as st
@@ -18,16 +20,18 @@ from guards import (
 
 # Our own files.
 # llm.py: sends messages to the model.
-from llm import ask_model
+from llm import ask_model, ask_model_json
 
 # prompts.py: the words we send to the model.
 from prompts import (
     KICKOFF_MESSAGE,
-    TECHNIQUES,  # the five feedback techniques, by name
-    build_system_prompt,  # builds the instructions from the user's choices
-    expected_questions_request,  # the request for the Expected questions tab
-    feedback_request,  # the request for feedback on an answer
-    new_question_request,  # the request for one practice question
+    REPORT_SCHEMA,  # the shape of the report (a JSON schema)
+    TECHNIQUES,
+    build_system_prompt,  # system prompt
+    expected_questions_request,
+    feedback_request,
+    new_question_request,
+    report_messages,  # builds the messages for the assessor
 )
 
 # ----- Page setup -----
@@ -167,6 +171,67 @@ def for_api(messages):
     return [{"role": m["role"], "content": m["content"]} for m in messages]
 
 
+# //score and download
+def build_transcript(chat):
+    """Turn the chat history into plain text for the assessor.
+
+    Only the visible conversation: no system prompt, no hidden kickoff message.
+    """
+    lines = []
+    for message in chat:
+        if message["role"] == "system" or message.get("hidden"):
+            continue  # skip what the user never saw
+        # A one-line if/else: "Interviewer" for the model's messages, "Candidate" otherwise.
+        speaker = "Interviewer" if message["role"] == "assistant" else "Candidate"
+        lines.append(f"{speaker}: {message['content']}")
+    # "\n\n".join(...) puts the lines together, with a blank line between each.
+    return "\n\n".join(lines)
+
+
+def show_report(report):
+    """Show the report: the scores in boxes, then the summary and the lists."""
+    st.subheader("Your interview report")
+
+    # Two boxes side by side: the overall score and the readiness.
+    # st.metric shows a label with a big value under it.
+    col_score, col_ready = st.columns(2)
+    col_score.metric("Overall score", f"{report['overall_score']}/10")
+    col_ready.metric("Readiness", report["readiness"])
+
+    st.write(report["summary"])
+
+    # The four smaller scores, in four boxes in one row.
+    scores = report["scores"]
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Communication", f"{scores['communication']}/5")
+    col2.metric("Technical depth", f"{scores['technical_depth']}/5")
+    col3.metric("Structure", f"{scores['structure']}/5")
+    col4.metric("Relevance", f"{scores['relevance']}/5")
+
+    # The three lists, as bullet points.
+    st.markdown("**Strengths**")
+    for item in report["strengths"]:
+        st.markdown(f"- {item}")
+
+    st.markdown("**To improve**")
+    for item in report["improvements"]:
+        st.markdown(f"- {item}")
+
+    st.markdown("**Next steps**")
+    for item in report["next_steps"]:
+        st.markdown(f"- {item}")
+
+    # A button that saves the report as a file.
+    # json.dumps turns the dictionary back into JSON text. indent=2 makes it readable,
+    # and ensure_ascii=False keeps letters like "ü" as they are.
+    st.download_button(
+        "Download report (JSON)",
+        json.dumps(report, indent=2, ensure_ascii=False),
+        file_name="interview_report.json",
+        mime="application/json",  # tells the browser what kind of file it is
+    )
+
+
 # ----- The two tabs -----
 
 # st.tabs returns one object per tab. "with" a tab puts content inside it.
@@ -247,6 +312,9 @@ with tab_interview:
     # The conversation, kept between reruns. An empty list means "not started".
     if "chat" not in st.session_state:
         st.session_state.chat = []
+        # The report, kept between reruns. None means "no report yet".
+    if "report" not in st.session_state:
+        st.session_state.report = None
 
     # Two buttons side by side. st.columns(2) splits the row into two halves.
     col_start, col_restart = st.columns(2)
@@ -258,6 +326,10 @@ with tab_interview:
             {"role": "system", "content": build_system_prompt(interview, technique, chat=True)},
             {"role": "user", "content": KICKOFF_MESSAGE, "hidden": True},
         ]
+        # Remember the settings this interview started with, for the report.
+        st.session_state.chat_interview = interview  # for score and download report
+        # A new interview has no report yet.
+        st.session_state.report = None  # for score and download report
         with st.spinner("The interviewer is getting ready..."):
             reply = ask_model(for_api(st.session_state.chat))
         # Save the interviewer's reply, so it's part of the history from now on.
@@ -265,6 +337,7 @@ with tab_interview:
 
     if col_restart.button("Restart"):
         st.session_state.chat = []  # forget the whole conversation
+        st.session_state.report = None  # and forget the report
         st.rerun()  # draw the page again straight away
 
     # Show the conversation so far, skipping what the user shouldn't see.
@@ -284,14 +357,37 @@ with tab_interview:
     if st.session_state.chat:
         # Count the real answers so far (not the hidden kickoff).
         answers = [m for m in st.session_state.chat if m["role"] == "user" and not m.get("hidden")]
+        # The report button: only once a question has been answered, and only once.
+        # "if answers" is True when the list isn't empty.
+        if answers and st.session_state.report is None:
+            if st.button("End & get report"):
+                with st.spinner("Writing your report..."):
+                    st.session_state.report = ask_model_json(
+                        report_messages(
+                            # .get() with a backup: if this interview started before
+                            # this feature existed, use the current settings instead.
+                            st.session_state.get("chat_interview", interview),
+                            build_transcript(st.session_state.chat),
+                        ),
+                        REPORT_SCHEMA,
+                    )
+                st.rerun()  # draw the page again, now with the report
 
+        # Show the report, if there is one.
+        if st.session_state.report:
+            show_report(st.session_state.report)
         if len(answers) >= MAX_INTERVIEW_ANSWERS:
             st.info(
                 "You've reached the answer limit for one interview. Click Restart to begin again."
             )
         else:
             # st.chat_input is a message box. It returns the text once you press Enter.
-            answer = st.chat_input("Type your answer", max_chars=MAX_ANSWER_CHARS)
+            # disabled=True greys out the box: the interview is over once there's a report.
+            answer = st.chat_input(
+                "Type your answer",
+                max_chars=MAX_ANSWER_CHARS,
+                disabled=st.session_state.report is not None,
+            )
 
             if answer:
                 problem = check_user_text(answer, MAX_ANSWER_CHARS)
