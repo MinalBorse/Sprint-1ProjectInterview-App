@@ -271,8 +271,11 @@ def show_report(report):
 
 # st.tabs returns one object per tab. "with" a tab puts content inside it.
 # tab_expected, tab_practice = st.tabs(["Expected questions", "Practice"])
-tab_expected, tab_practice, tab_interview = st.tabs(
-    ["Expected questions", "Practice", "Mock interview"]
+# The order of this list is the order of the tabs on the page.
+# The first tab is the one shown when the page opens, so the main feature goes first.
+# The names on the left must be in the same order as the labels on the right.
+tab_interview, tab_practice, tab_expected = st.tabs(
+    ["Mock interview", "Practice", "Expected questions"]
 )
 
 # ----- Tab 1: Expected questions -----
