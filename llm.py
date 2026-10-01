@@ -2,6 +2,8 @@
 # The text in triple quotes above is a "docstring": a note saying what this file is for.
 
 # ----- Imports: bring in the tools this file needs -----
+# Built into Python: turns JSON text into Python dictionaries and lists.
+import json
 
 # Built into Python: lets us read environment variables (hidden settings, like our key).
 import os
@@ -66,6 +68,35 @@ def ask_model(messages):
     # We asked for one, so we take the first: [0] (Python counts from 0).
     # .message.content is the text of that answer, which we hand back.
     return response.choices[0].message.content
+
+
+def ask_model_json(messages, schema):
+    """Like ask_model, but asks for JSON in the shape of schema, and returns a dictionary.
+
+    schema is a JSON schema, like REPORT_SCHEMA in prompts.py.
+    """
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=messages,
+        # A report is longer than a single reply, and the model also thinks first,
+        # so it gets more room than ask_model's 2000.
+        max_tokens=4000,
+        # response_format asks for JSON that matches the schema.
+        response_format={"type": "json_schema", "json_schema": schema},
+    )
+
+    # The reply is JSON written as text. "or ''" turns an empty reply (None) into "".
+    text = (response.choices[0].message.content or "").strip()
+
+    # Sometimes a model wraps JSON in ```json ... ``` marks, even when asked not to.
+    # Never fully trust model output: if the marks are there, remove them.
+    if text.startswith("```"):
+        # .split("\n", 1)[1] drops the first line (```json).
+        # .rsplit("```", 1)[0] drops everything from the last ``` onwards.
+        text = text.split("\n", 1)[1].rsplit("```", 1)[0]
+
+    # json.loads turns JSON text into a Python dictionary.
+    return json.loads(text)
 
 
 # ----- A quick test -----

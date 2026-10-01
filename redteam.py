@@ -19,7 +19,6 @@ import pandas as pd
 # Our own guard, exactly as the app uses it.
 from guards import MAX_ANSWER_CHARS, check_user_text
 
-
 # ----- The attacks: these SHOULD be blocked -----
 
 # Each item is a pair, (category, text). A pair in round brackets is a "tuple".
@@ -65,7 +64,6 @@ INNOCENT = [
 ]
 
 
-
 # ----- Testing one input -----
 
 
@@ -101,7 +99,6 @@ def run_guard_tests():
         rows.append(test_one("Innocent", text, is_attack=False))
 
     return rows
-
 
 
 # ----- The two numbers -----
@@ -148,6 +145,7 @@ def save_to_excel(results, summary):
         pd.DataFrame(results).to_excel(writer, sheet_name="all inputs", index=False)
     # index=False: don't add an extra column of row numbers.
 
+
 # ----- Optional: does the system prompt stop what the guard missed? -----
 
 # Interview settings for the test, with the same keys app.py uses.
@@ -188,6 +186,7 @@ def ask_model_about_missed(results):
             row["model_resisted (fill in yes/no)"] = ""
 
     # ----- Run everything: uv run python redteam.py -----
+
 
 if __name__ == "__main__":
     results = run_guard_tests()
