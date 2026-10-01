@@ -70,7 +70,7 @@ def chain_of_thought(interview):
     return f"""When the candidate answers a question, think it through step by step
 before giving feedback:
 1. What skill was the question testing?
-2. What would a strong answer include at {interview['seniority']} level?
+2. What would a strong answer include at {interview["seniority"]} level?
 3. What did the candidate cover, miss, or get wrong?
 4. What single change would improve the answer most?
 
@@ -82,7 +82,7 @@ Then reply in this order:
 def role_persona(interview):
     """Technique 4: a detailed character who speaks naturally."""
     return f"""You are Sarah Chen, a hiring manager with 12 years of experience hiring for
-roles like {interview['job_title']}. You have interviewed hundreds of candidates, and
+roles like {interview["job_title"]}. You have interviewed hundreds of candidates, and
 you care about helping them improve.
 When the candidate answers a question, react the way you would across the table in a
 real interview: speak naturally in the first person, with no headings or bullet
@@ -119,7 +119,7 @@ TECHNIQUES = {
 # ----- The system prompt -----
 
 
-#def build_system_prompt(interview, technique=None):#before chat bot added
+# def build_system_prompt(interview, technique=None):#before chat bot added
 def build_system_prompt(interview, technique=None, chat=False):
     """Turn the user's choices into instructions for the model.
 
@@ -149,7 +149,6 @@ def build_system_prompt(interview, technique=None, chat=False):
     else:
         company_rule = "No specific company was given."
 
-
     # NEW: the job description, if one was pasted.
     if interview["job_description"]:
         # Remove our own tags from the pasted text, so it can't close the
@@ -172,12 +171,12 @@ def build_system_prompt(interview, technique=None, chat=False):
     prompt = f"""Your job is to help a candidate practise for a job interview.
 
 Interview details:
-- Job title: {interview['job_title']}
-- Company: {interview['company'] or 'Not specified'}
-- Professional area: {interview['area']}
-- Seniority: {interview['seniority']}
-- Interview type: {interview['interview_type']}
-- Interviewer style: {STYLE_GUIDANCE[interview['style']]}
+- Job title: {interview["job_title"]}
+- Company: {interview["company"] or "Not specified"}
+- Professional area: {interview["area"]}
+- Seniority: {interview["seniority"]}
+- Interview type: {interview["interview_type"]}
+- Interviewer style: {STYLE_GUIDANCE[interview["style"]]}
 
 {country_rule}
 
@@ -189,8 +188,6 @@ Interview details:
         technique_function = TECHNIQUES[technique]  # look up the function by its name
         technique_text = technique_function(interview)  # call it to get the text
         prompt += "\n\nHow to give feedback:\n" + technique_text
-
-
 
     # NEW: for the mock interview chat, add how the conversation should run.
     if chat:

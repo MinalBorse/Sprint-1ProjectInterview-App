@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 # Installed with uv: OpenAI is the tool that sends messages to the model.
 from openai import OpenAI
 
-
 # ----- Load the key -----
 
 # Copy each line of .env (like OPENROUTER_API_KEY=...) into the environment variables.
@@ -48,6 +47,7 @@ client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
 
 
 # ----- The function the rest of the app will use -----
+
 
 def ask_model(messages):
     """Send the conversation to the model and return its reply as text."""

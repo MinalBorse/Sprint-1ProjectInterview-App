@@ -5,6 +5,17 @@
 # Streamlit builds the web page. "as st" is a short nickname for it.
 import streamlit as st
 
+# NEW (Step 5): guards.py, the security checks.
+# MAX_... are the length limits, and check_user_text is the guard itself.
+from guards import (
+    MAX_ANSWER_CHARS,
+    MAX_COMPANY_CHARS,
+    MAX_INTERVIEW_ANSWERS,
+    MAX_JD_CHARS,
+    MAX_JOB_TITLE_CHARS,
+    check_user_text,
+)
+
 # Our own files.
 # llm.py: sends messages to the model.
 from llm import ask_model
@@ -18,18 +29,6 @@ from prompts import (
     feedback_request,  # the request for feedback on an answer
     new_question_request,  # the request for one practice question
 )
-
-# NEW (Step 5): guards.py, the security checks.
-# MAX_... are the length limits, and check_user_text is the guard itself.
-from guards import (
-    MAX_ANSWER_CHARS,
-    MAX_COMPANY_CHARS,
-    MAX_INTERVIEW_ANSWERS,
-    MAX_JD_CHARS,
-    MAX_JOB_TITLE_CHARS,
-    check_user_text,
-)
-
 
 # ----- Page setup -----
 
@@ -48,11 +47,9 @@ with st.sidebar:
 
     # A text box. The second value is what's in it at the start.
     # NEW (Step 5): max_chars stops the user typing more than the limit.
-    job_title = st.text_input(
-        "Job title", "Junior Python Developer", max_chars=MAX_JOB_TITLE_CHARS
-    )
+    job_title = st.text_input("Job title", "Junior Python Developer", max_chars=MAX_JOB_TITLE_CHARS)
 
-        # NEW: an optional company name, so questions can fit that company.
+    # NEW: an optional company name, so questions can fit that company.
     # placeholder is grey hint text, shown only while the box is empty.
     company = st.text_input(
         "Company (optional)",
@@ -61,7 +58,7 @@ with st.sidebar:
         placeholder="For example: SAP, Siemens, Zalando",
     )
 
-        # NEW: an optional job description, so questions fit this exact position.
+    # NEW: an optional job description, so questions fit this exact position.
     job_description = st.text_area(
         "Job description (optional)",
         height=150,
@@ -151,6 +148,7 @@ def call_model(user_request, technique=None):
     ]
     return ask_model(messages)
 
+
 def for_api(messages):
     """Copy the messages with only "role" and "content".
 
@@ -158,10 +156,12 @@ def for_api(messages):
     """
     # A "list comprehension": build a new list by going through the old one.
     return [{"role": m["role"], "content": m["content"]} for m in messages]
+
+
 # ----- The two tabs -----
 
 # st.tabs returns one object per tab. "with" a tab puts content inside it.
-#tab_expected, tab_practice = st.tabs(["Expected questions", "Practice"])
+# tab_expected, tab_practice = st.tabs(["Expected questions", "Practice"])
 tab_expected, tab_practice, tab_interview = st.tabs(
     ["Expected questions", "Practice", "Mock interview"]
 )
@@ -262,7 +262,9 @@ with tab_interview:
         answers = [m for m in st.session_state.chat if m["role"] == "user" and not m.get("hidden")]
 
         if len(answers) >= MAX_INTERVIEW_ANSWERS:
-            st.info("You've reached the answer limit for one interview. Click Restart to begin again.")
+            st.info(
+                "You've reached the answer limit for one interview. Click Restart to begin again."
+            )
         else:
             # st.chat_input is a message box. It returns the text once you press Enter.
             answer = st.chat_input("Type your answer", max_chars=MAX_ANSWER_CHARS)
