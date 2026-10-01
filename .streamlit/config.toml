@@ -1,0 +1,9 @@
+# Streamlit's colour settings. "#" starts a comment in this file too.
+# Colours are written as hex codes: # followed by 6 characters.
+
+[theme]
+base = "dark"                          # Streamlit's dark theme, for readable boxes and menus
+primaryColor = "#7FA88C"               # a muted sage green: buttons, sliders, check marks
+backgroundColor = "#141C18"            # almost black, with a hint of green
+secondaryBackgroundColor = "#1E2A24"   # a slightly lighter dark green for the sidebar
+textColor = "#F2F2EE"                  # a soft white, like in your reference

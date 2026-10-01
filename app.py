@@ -34,14 +34,34 @@ from prompts import (
     report_messages,  # builds the messages for the assessor
 )
 
+# style.py: the leaf background and the welcome card.
+from style import add_calm_style, show_welcome
+
 # ----- Page setup -----
 
 # The browser tab's title and icon. This must be the first Streamlit command.
-st.set_page_config(page_title="Interview Practice", page_icon="🎯")
+# A leaf as the browser tab's icon, to match the calm look.
+st.set_page_config(page_title="Interview Practice", page_icon="🌿")
 
 # The big heading at the top of the page.
-st.title("Interview Practice")
+# Add the leaf background and the soft styles. This must come after
+# set_page_config, and before the rest of the page.
+add_calm_style()
 
+st.title("Practise your interview")
+
+# A warm, comforting welcome, so the page feels like a calm place to practise.
+# A warm welcome, with what the app offers, shown with check marks.
+show_welcome(
+    "<b>Welcome. Take a slow breath: you're in a calm place to practise.</b><br>"
+    "There's no pressure here, only chances to learn.<br><br>",
+    [
+        "A mock interview that remembers your whole conversation",
+        "Feedback on every answer, in five different styles",
+        "An honest report with scores at the end",
+        "Questions tailored to your role, company and job description",
+    ],
+)
 
 # ----- Sidebar: the user describes their interview -----
 
