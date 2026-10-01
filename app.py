@@ -20,7 +20,7 @@ from guards import (
 
 # Our own files.
 # llm.py: sends messages to the model.
-from llm import ask_model, ask_model_json
+from llm import MODELS, REASONING_EFFORTS, ask_model, ask_model_json
 
 # prompts.py: the words we send to the model.
 from prompts import (
@@ -99,6 +99,30 @@ with st.sidebar:
     with st.expander("Developer settings"):
         # list(TECHNIQUES) gives the five technique names as the menu options.
         technique = st.selectbox("Feedback technique", list(TECHNIQUES))
+        # ----- Model settings -----
+
+        # A menu of the allowed models.
+        # list(MODELS) gives the keys (the slugs) as the options.
+        # format_func=MODELS.get shows each option through MODELS.get, which looks
+        # up its friendly label. So the code gets "openai/gpt-5-mini", and the
+        # user sees "GPT-5 mini (default, balanced)".
+        model = st.selectbox("Model", list(MODELS), format_func=MODELS.get)
+
+        # A slider. Its inputs, in order: the label, the smallest value, the largest
+        # value, the starting value, and the step size.
+        # The largest value is 4000, a firm cap on how much one reply can cost.
+        max_tokens = st.slider("Max tokens", 500, 4000, 2000, 250)
+
+        # A menu of reasoning efforts. ["default"] + REASONING_EFFORTS joins two lists,
+        # so the menu starts with "default", followed by minimal, low, medium, high.
+        effort_choice = st.selectbox("Reasoning effort", ["default"] + REASONING_EFFORTS)
+
+        # A one-line if/else. "default" becomes None, which means "don't send an
+        # effort, let the model decide". Any other choice is used as it is.
+        reasoning_effort = None if effort_choice == "default" else effort_choice
+
+        # A small grey note, so it's clear why there's no temperature setting.
+        st.caption("Temperature isn't offered: the GPT-5 models don't support it.")
         # A developer tool, to see exactly what the model was told.
         # st.checkbox returns True when ticked, and False when not.
         show_prompt = st.checkbox("Show system prompts")
@@ -147,6 +171,13 @@ interview = {
     "language": language,  # NEW
     "feedback_length": feedback_length,
 }
+# The model settings, bundled in one dictionary, so they can be passed to every
+# call at once. The keys must match the names of ask_model's inputs exactly.
+model_settings = {
+    "model": model,
+    "max_tokens": max_tokens,
+    "reasoning_effort": reasoning_effort,
+}
 
 
 def call_model(user_request, technique=None):
@@ -161,7 +192,9 @@ def call_model(user_request, technique=None):
         # What we're asking for this time.
         {"role": "user", "content": user_request},
     ]
-    return ask_model(messages)
+    # "**model_settings" unpacks the dictionary into named inputs. It's the same
+    # as writing ask_model(messages, model=..., max_tokens=..., reasoning_effort=...).
+    return ask_model(messages, **model_settings)
 
 
 def for_api(messages):
@@ -333,7 +366,7 @@ with tab_interview:
         # A new interview has no report yet.
         st.session_state.report = None  # for score and download report
         with st.spinner("The interviewer is getting ready..."):
-            reply = ask_model(for_api(st.session_state.chat))
+            reply = ask_model(for_api(st.session_state.chat), **model_settings)
         # Save the interviewer's reply, so it's part of the history from now on.
         st.session_state.chat.append({"role": "assistant", "content": reply})
 
@@ -401,7 +434,7 @@ with tab_interview:
                     # Add the answer, then send the WHOLE conversation.
                     st.session_state.chat.append({"role": "user", "content": answer})
                     with st.spinner("The interviewer is thinking..."):
-                        reply = ask_model(for_api(st.session_state.chat))
+                        reply = ask_model(for_api(st.session_state.chat), **model_settings)
                     st.session_state.chat.append({"role": "assistant", "content": reply})
                     # Draw the page again, so the new messages appear in the chat above.
                     st.rerun()
