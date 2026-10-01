@@ -120,17 +120,35 @@ def build_system_prompt(interview, technique=None):
             "and never use stereotypes about nationalities."
         )
 
+    # NEW: the company, if one was given.
+    # An empty text counts as False in Python, so this runs only when there's a company.
+    if interview["company"]:
+        company_rule = (
+            f"The candidate is applying to {interview['company']}. Tailor questions to "
+            "what is generally known about this kind of company and its industry. "
+            "Do not invent specific facts about its interview process or culture; "
+            "if you are not sure, keep it general."
+        )
+    else:
+        company_rule = "No specific company was given."
+
+
+
+    # Part 1, the same for every technique: the job and the interview details.
     # Part 1, the same for every technique: the job and the interview details.
     prompt = f"""Your job is to help a candidate practise for a job interview.
 
 Interview details:
 - Job title: {interview['job_title']}
+- Company: {interview['company'] or 'Not specified'}
 - Professional area: {interview['area']}
 - Seniority: {interview['seniority']}
 - Interview type: {interview['interview_type']}
 - Interviewer style: {STYLE_GUIDANCE[interview['style']]}
 
-{country_rule}"""
+{country_rule}
+
+{company_rule}"""
 
     # Part 2, the only part that changes: the technique, if one was chosen.
     if technique is not None:

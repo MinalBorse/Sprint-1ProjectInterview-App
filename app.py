@@ -20,7 +20,7 @@ from prompts import (
 
 # NEW (Step 5): guards.py, the security checks.
 # MAX_... are the length limits, and check_user_text is the guard itself.
-from guards import MAX_ANSWER_CHARS, MAX_JOB_TITLE_CHARS, check_user_text
+from guards import MAX_ANSWER_CHARS, MAX_COMPANY_CHARS, MAX_JOB_TITLE_CHARS, check_user_text
 
 
 # ----- Page setup -----
@@ -42,6 +42,15 @@ with st.sidebar:
     # NEW (Step 5): max_chars stops the user typing more than the limit.
     job_title = st.text_input(
         "Job title", "Junior Python Developer", max_chars=MAX_JOB_TITLE_CHARS
+    )
+
+        # NEW: an optional company name, so questions can fit that company.
+    # placeholder is grey hint text, shown only while the box is empty.
+    company = st.text_input(
+        "Company (optional)",
+        "",
+        max_chars=MAX_COMPANY_CHARS,
+        placeholder="For example: SAP, Siemens, Zalando",
     )
 
     # Drop-down menus. index=1 selects the second option at the start (counting from 0).
@@ -81,12 +90,19 @@ if job_title_problem:
     # so no request can be sent to the model.
     st.stop()
 
-
+# NEW: check the company too, but only if one was typed, because it's optional.
+# Without this "if", an empty box would be blocked as "Please type something first."
+if company.strip():
+    company_problem = check_user_text(company, MAX_COMPANY_CHARS)
+    if company_problem:
+        st.error(f"Company: {company_problem}")
+        st.stop()
 # ----- Collect the choices -----
 
 # Put all the choices in one dictionary, so we can pass them around together.
 interview = {
     "job_title": job_title,
+    "company": company.strip(),  # NEW: empty text if no company was typed
     "area": area,
     "seniority": seniority,
     "country": country,

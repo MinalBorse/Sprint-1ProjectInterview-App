@@ -10,7 +10,7 @@ import unicodedata
 
 MAX_ANSWER_CHARS = 2000  # the longest answer we accept
 MAX_JOB_TITLE_CHARS = 100  # the longest job title we accept
-
+MAX_COMPANY_CHARS = 100  # the longest company name we accept
 
 # ----- Common prompt-injection phrases -----
 # Each line is a regular expression (a text pattern).
