@@ -233,6 +233,11 @@ with tab_practice:
                     with st.expander("System prompt that was sent"):
                         # st.code shows text exactly as it is, in a box, with a copy button.
                         st.code(build_system_prompt(interview, technique))
+                # Developer tool: show the exact system prompt that was sent.
+                if show_prompt:
+                    with st.expander("System prompt that was sent"):
+                        # st.code shows text exactly as it is, in a box, with a copy button.
+                        st.code(build_system_prompt(interview, technique))
 
 # ----- Tab 3: Mock interview (a chatbot that remembers the conversation) -----
 
