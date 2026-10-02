@@ -170,3 +170,7 @@ layers together stopped 17 of 17.
 - **Git:** one branch per feature, merge before branching again, commit often,
   and check `Get-ChildItem` before deleting a folder
 
+- **My false positive test was too easy.** The AI critique found that real IT
+  answers ("developer mode on the Android phone", "an iOS jailbreak", a line
+  starting "System:") are blocked, and German or look-alike-letter attacks get
+  through. Fix: add these cases to redteam.py, and report the honest numbers.
