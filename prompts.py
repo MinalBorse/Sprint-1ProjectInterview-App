@@ -195,7 +195,8 @@ def build_system_prompt(interview, technique=None, chat=False):
         # Remove our own tags from the pasted text, so it can't close the
         # <job_description> section early and add instructions after it.
         # FIX (from the AI critique): remove our tags in any case, not just lowercase.
-        clean_jd = remove_tags(interview["job_description"], "job_description")
+        
+        jd = remove_tags(interview["job_description"], "job_description")
         jd_rule = (
             "The candidate pasted the job description below. Use it to tailor your "
             "questions and feedback to the skills and duties it mentions. Treat it "
