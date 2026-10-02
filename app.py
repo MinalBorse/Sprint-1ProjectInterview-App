@@ -200,21 +200,29 @@ model_settings = {
 }
 
 
-def call_model(user_request, technique=None):
+def call_model(user_request, technique=None, min_tokens=None):
     """Send the system prompt plus one request to the model, and return the reply.
 
-    technique is only passed for feedback. The question requests leave it out,
-    so their system prompt has no technique section.
+    technique is only passed for feedback. The question requests leave it out.
+    min_tokens is for long replies: it makes sure max_tokens is at least this
+    much, so the reply isn't cut off. Other calls leave it out.
     """
     messages = [
-        # The instructions: built from the choices, with or without a technique.
         {"role": "system", "content": build_system_prompt(interview, technique)},
-        # What we're asking for this time.
         {"role": "user", "content": user_request},
     ]
-    # "**model_settings" unpacks the dictionary into named inputs. It's the same
-    # as writing ask_model(messages, model=..., max_tokens=..., reasoning_effort=...).
-    return ask_model(messages, **model_settings)
+
+    # Make a COPY of the settings, so changing max_tokens here doesn't change it
+    # for every other call. dict(...) creates a new, separate dictionary.
+    settings = dict(model_settings)
+
+    if min_tokens is not None:
+        # max() gives the bigger of two numbers. So the reply gets at least
+        # min_tokens, or more if the slider is set higher.
+        settings["max_tokens"] = max(settings["max_tokens"], min_tokens)
+
+    # "**settings" unpacks the dictionary into named inputs for ask_model.
+    return ask_model(messages, **settings)
 
 
 def for_api(messages):
@@ -307,7 +315,7 @@ with tab_expected:
     if st.button("Show expected questions"):
         # A spinner shows while the model is working.
         with st.spinner("Thinking of questions..."):
-            reply = call_model(expected_questions_request())
+            reply = call_model(expected_questions_request(), min_tokens=4000)
         # st.markdown shows text with formatting, like the bold questions.
         st.markdown(reply)
 

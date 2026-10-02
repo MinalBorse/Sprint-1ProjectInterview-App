@@ -77,3 +77,12 @@ instead was the right choice.
    for a question I never had the chance to answer.
 3. **Questions can bundle several topics:** with a detailed ad, one question asked
    about six things at once.
+
+   **Fixed:** call_model now takes an optional min_tokens, and the expected
+   questions use 4000, so only this long request gets more room. Checked: all 8
+   questions arrived in 3 runs, and Practice still used 2000.
+
+
+   - Known limitation: the expected questions disappear after clicking elsewhere,
+  because they aren't saved in st.session_state. Fix: save them, as the practice
+  question already is.
