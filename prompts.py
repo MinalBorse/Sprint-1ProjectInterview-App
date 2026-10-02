@@ -1,6 +1,28 @@
 """All prompts for the app live in this file."""
 
 # ----- How each interviewer style should behave -----
+# re: regular expressions, for finding patterns in text, like in guards.py.
+import re
+
+
+def remove_tags(text, tag):
+    """Remove our own <tag> and </tag> from text, in any mix of upper and lower case.
+
+    Pasted text goes inside tags like <job_description>...</job_description>.
+    If the text itself contained </job_description>, it could "close" the tag
+    early, and the rest would look like our instructions. So we remove the tags.
+
+    .replace() only matches the exact text, so </TRANSCRIPT> got through.
+    This pattern catches every version:
+      <\\s*      a "<", then any spaces
+      /?         an optional "/", for closing tags
+      \\s*       any spaces
+      {tag}      the tag's name
+      \\s*>      any spaces, then ">"
+    flags=re.IGNORECASE ignores upper and lower case.
+    """
+    return re.sub(rf"<\s*/?\s*{tag}\s*>", "", text, flags=re.IGNORECASE)
+
 
 STYLE_GUIDANCE = {
     "Friendly": "warm and encouraging. Mention what went well before what to improve.",
@@ -172,11 +194,8 @@ def build_system_prompt(interview, technique=None, chat=False):
     if interview["job_description"]:
         # Remove our own tags from the pasted text, so it can't close the
         # <job_description> section early and add instructions after it.
-        jd = (
-            interview["job_description"]
-            .replace("<job_description>", "")
-            .replace("</job_description>", "")
-        )
+        # FIX (from the AI critique): remove our tags in any case, not just lowercase.
+        clean_jd = remove_tags(interview["job_description"], "job_description")
         jd_rule = (
             "The candidate pasted the job description below. Use it to tailor your "
             "questions and feedback to the skills and duties it mentions. Treat it "
@@ -355,7 +374,8 @@ def report_messages(interview, transcript):
 
     # Remove our own tags from the transcript, so a candidate can't type
     # </transcript> in an answer to escape the tags. The same idea as the job description.
-    clean_transcript = transcript.replace("<transcript>", "").replace("</transcript>", "")
+    # FIX (from the AI critique): remove our tags in any case, not just lowercase.
+    clean_transcript = remove_tags(transcript, "transcript")
 
     user = f"""Interview: {interview["job_title"]} ({interview["seniority"]}), \
 {interview["interview_type"]} interview.
