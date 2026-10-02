@@ -44,7 +44,6 @@ measures (encryption, access control, deletion), and pytest strategies.
 
 But the one question asked about six things at once (endpoint design, validation,
 file storage, Celery, GDPR and testing), which is a lot for a Junior candidate.
-With a detailed ad, the model tried to fit every detail into one question.
 
 ### Mock interview with the ad
 
@@ -55,10 +54,9 @@ mentioned), which shows the conversation memory working.
 The report was fair overall: it quoted my answer, scored 6/10, and said the
 evidence was limited, since I answered only one question. But it marked me down
 for not describing the database design, which was the last question, and I never
-answered it, because I ended the interview straight after. The assessor prompt
-doesn't say what to do with an unanswered final question, so the model guessed.
+answered it, because I ended the interview straight after.
 
-## Conclusion
+### Conclusion
 
 Without the ad, 1 of 7 and 1 of 8 questions used its details, both times pytest,
 by chance. With it, 8 of 8 and 7 of 7 did, covering 10 of the 11 details each
@@ -68,24 +66,78 @@ GDPR and code reviews. The Practice and Mock interview tabs followed the ad too.
 The job description clearly works, unlike the company setting, so relying on it
 instead was the right choice.
 
-## Problems found by these tests
+## Problems found by these tests, and how I fixed them
 
-1. **Expected questions cut off:** in 2 of the 4 runs (A and D), the reply stopped
-   before the 8th question, because 8 detailed questions plus the model's hidden
-   thinking need more than max_tokens=2000.
-2. **The report counts an unanswered final question:** the assessor marked me down
-   for a question I never had the chance to answer.
-3. **Questions can bundle several topics:** with a detailed ad, one question asked
-   about six things at once.
+### 1. Expected questions cut off
 
- **Fixed:** call_model now takes an optional min_tokens, and the expected
-   questions use 4000. Checked: all 8 questions arrived in 3 runs (the log showed
-   max_tokens=4000), and Practice still used 2000.
-   **Fixed:** build_transcript now leaves out the interviewer's last message when
-   nobody answered it, so the assessor never sees the unanswered question. A rule
-   in the assessor prompt is a backup. Checked: after one answer, the report no
-   longer mentioned the unanswered follow-up question.
+**Problem:** in 2 of the 4 runs (A and D), the reply stopped before the 8th
+question, because 8 detailed questions plus the model's hidden thinking need more
+than max_tokens=2000.
 
-   - Known limitation: the expected questions disappear after clicking elsewhere,
-  because they aren't saved in st.session_state. Fix: save them, as the practice
-  question already is.
+**Fix:** call_model now takes an optional min_tokens, and only the expected
+questions use 4000. Every other call keeps the slider's value, so the cost ceiling
+only rises where it's needed. A note under the slider would make this exception
+visible (optional).
+
+**Checked:** all 8 questions arrived complete in every run after the fix, and the
+log showed max_tokens=4000 for the expected questions and 2000 for Practice.
+
+### 2. The report counted an unanswered final question
+
+**Problem:** when the candidate ends the interview, the conversation ends with the
+interviewer's next question, which nobody answered. The assessor treated it as a
+skipped question, and marked the candidate down ("when asked about database
+design, you did not...").
+
+**Fix:** in code, not only in the prompt. build_transcript now leaves out the
+interviewer's last message when nobody answered it, so the assessor never sees the
+unanswered question. A rule in the assessor prompt is a backup: "Only judge the
+answers that are in the transcript."
+
+**Checked:** the unanswered follow-up asked about pytest, fixtures, code reviews,
+Docker and CI. The report mentioned none of these, no longer said "when asked
+about...", and judged only the one answer given.
+
+### 3. Questions bundled several topics
+
+**Problem:** the prompts said "ask one question", and the model obeyed literally:
+one sentence, but with up to six topics (about 50 words), especially with a
+detailed job description.
+
+**Fix:** a shared rule, ONE_TOPIC_RULE, defines "one question" as one topic, under
+30 words, and tells the model to spread the job description's skills across
+different questions instead. It's in the shared part of the system prompt, so it
+applies to every tab from one place.
+
+**Checked:**
+
+| Where | Before | After |
+|---|---|---|
+| Practice, no ad | (not tested) | 3 questions, 1 topic each, about 19 to 21 words |
+| Practice, with ad | 1 question with 6 topics, about 50 words | 3 questions, 1 topic each, about 19 to 27 words |
+| Mock interview, with ad | 1 follow-up with 4 topics | 5 questions, 1 topic each, about 14 to 22 words |
+| Expected questions, with ad | (mostly fine) | 8 questions, 1 topic each, about 12 to 18 words |
+
+The expected questions now spread the ad across all 8: non-technical colleagues,
+FastAPI, PostgreSQL, Docker, Kubernetes, pytest, code reviews, and claims handlers.
+Only the "nice to have" skills, Celery and GDPR, were left out.
+
+## Known limitations (found while testing, not fixed yet)
+
+1. **Practice repeats its most likely question.** Without the ad, all 3 questions
+   were about fixing a bug; with it, all 3 were about working with non-technical
+   stakeholders. Each "New question" click is a one-time call with no memory.
+   Possible fix: remember the questions already asked, and tell the model not to
+   repeat them.
+2. **The interviewer accepts answers that miss the question.** In the Mock
+   interview, I answered about scope changes instead of pytest, and the
+   interviewer said "Nice" and moved on. Possible fix: "If an answer doesn't
+   address the question, say so kindly, and ask it again."
+3. **The interview type drifts in the Mock interview.** With "Behavioural"
+   selected, 4 of 5 Mock interview questions were technical, following the ad's
+   skills. In the Expected questions tab, "Behavioural" was followed perfectly.
+   Possible fix: "The interview type decides the kind of question; the job
+   description decides what it's about."
+4. **The expected questions disappear after other clicks,** because they aren't
+   saved in st.session_state. Possible fix: save them, as the practice question
+   already is.
