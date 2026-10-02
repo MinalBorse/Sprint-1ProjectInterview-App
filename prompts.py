@@ -136,26 +136,26 @@ def build_system_prompt(interview, technique=None, chat=False):
     section, which is what the question requests use.
     """
     # Country: adapt to real professional conventions, but never use stereotypes.
-    if interview["country"] == "Other":
-        country_rule = "Use internationally common professional interview conventions."
-    else:
-        country_rule = (
-            f"Follow common professional interview conventions in {interview['country']}, "
-            "such as how formal the tone is. Treat the candidate as an individual, "
-            "and never use stereotypes about nationalities."
-        )
+    # if interview["country"] == "Other":
+    #     country_rule = "Use internationally common professional interview conventions."
+    # else:
+    #     country_rule = (
+    #         f"Follow common professional interview conventions in {interview['country']}, "
+    #         "such as how formal the tone is. Treat the candidate as an individual, "
+    #         "and never use stereotypes about nationalities."
+    #     )
 
     # NEW: the company, if one was given.
     # An empty text counts as False in Python, so this runs only when there's a company.
-    if interview["company"]:
-        company_rule = (
-            f"The candidate is applying to {interview['company']}. Tailor questions to "
-            "what is generally known about this kind of company and its industry. "
-            "Do not invent specific facts about its interview process or culture; "
-            "if you are not sure, keep it general."
-        )
-    else:
-        company_rule = "No specific company was given."
+    # if interview["company"]:
+    #     company_rule = (
+    #         f"The candidate is applying to {interview['company']}. Tailor questions to "
+    #         "what is generally known about this kind of company and its industry. "
+    #         "Do not invent specific facts about its interview process or culture; "
+    #         "if you are not sure, keep it general."
+    #     )
+    # else:
+    #     company_rule = "No specific company was given."
 
     # NEW: the job description, if one was pasted.
     if interview["job_description"]:
@@ -180,7 +180,6 @@ def build_system_prompt(interview, technique=None, chat=False):
 
 Interview details:
 - Job title: {interview["job_title"]}
-- Company: {interview["company"] or "Not specified"}
 - Professional area: {interview["area"]}
 - Seniority: {interview["seniority"]}
 - Interview type: {interview["interview_type"]}
@@ -188,14 +187,10 @@ Interview details:
 - Feedback length: {FEEDBACK_LENGTH[interview["feedback_length"]]}
 - Language: {interview["language"]}
 
-{country_rule}
-
-{company_rule}
 {jd_rule}
 
-Write everything in {interview["language"]}, even if the country, company or job
-description suggest another language. The country only affects conventions like
-formality, not the language."""
+Write everything in {interview["language"]}, even if the job description
+suggests another language."""
 
     # Part 2, the only part that changes: the technique, if one was chosen.
     if technique is not None:

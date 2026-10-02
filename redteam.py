@@ -151,11 +151,11 @@ def save_to_excel(results, summary):
 # Interview settings for the test, with the same keys app.py uses.
 TEST_INTERVIEW = {
     "job_title": "Junior Python Developer",
-    "company": "",
+    # "company": "",
     "job_description": "",
     "area": "IT",
     "seniority": "Junior",
-    "country": "Germany",
+    # "country": "Germany",
     "language": "English",
     "interview_type": "Behavioural",
     "style": "Neutral",

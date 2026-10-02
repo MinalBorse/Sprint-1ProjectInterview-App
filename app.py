@@ -11,7 +11,7 @@ import streamlit as st
 # MAX_... are the length limits, and check_user_text is the guard itself.
 from guards import (
     MAX_ANSWER_CHARS,
-    MAX_COMPANY_CHARS,
+    # MAX_COMPANY_CHARS,
     MAX_INTERVIEW_ANSWERS,
     MAX_JD_CHARS,
     MAX_JOB_TITLE_CHARS,
@@ -59,7 +59,7 @@ show_welcome(
         "A mock interview that remembers your whole conversation",
         "Feedback on every answer, in five different styles",
         "An honest report with scores at the end",
-        "Questions tailored to your role, company and job description",
+        "Questions tailored to your role and job description",
     ],
 )
 
@@ -75,12 +75,12 @@ with st.sidebar:
 
     # NEW: an optional company name, so questions can fit that company.
     # placeholder is grey hint text, shown only while the box is empty.
-    company = st.text_input(
-        "Company (optional)",
-        "",
-        max_chars=MAX_COMPANY_CHARS,
-        placeholder="For example: SAP, Siemens, Zalando",
-    )
+    # company = st.text_input(
+    #     "Company (optional)",
+    #     "",
+    #     max_chars=MAX_COMPANY_CHARS,
+    #     placeholder="For example: SAP, Siemens, Zalando",
+    # )
 
     # NEW: an optional job description, so questions fit this exact position.
     job_description = st.text_area(
@@ -97,9 +97,9 @@ with st.sidebar:
     seniority = st.selectbox(
         "Seniority", ["Intern", "Junior", "Mid-level", "Senior", "Lead"], index=1
     )
-    country = st.selectbox(
-        "Country", ["Germany", "United Kingdom", "United States", "India", "Other"]
-    )
+    # country = st.selectbox(
+    #     "Country", ["Germany", "United Kingdom", "United States", "India", "Other"]
+    # )
 
     # NEW: the interview language, chosen separately from the country,
     # so an interview "in Germany" doesn't automatically become German.
@@ -160,13 +160,13 @@ if job_title_problem:
     # so no request can be sent to the model.
     st.stop()
 
-# NEW: check the company too, but only if one was typed, because it's optional.
-# Without this "if", an empty box would be blocked as "Please type something first."
-if company.strip():
-    company_problem = check_user_text(company, MAX_COMPANY_CHARS)
-    if company_problem:
-        st.error(f"Company: {company_problem}")
-        st.stop()
+    # NEW: check the company too, but only if one was typed, because it's optional.
+    # Without this "if", an empty box would be blocked as "Please type something first."
+    # if company.strip():
+    #     company_problem = check_user_text(company, MAX_COMPANY_CHARS)
+    #     if company_problem:
+    #         st.error(f"Company: {company_problem}")
+    #         st.stop()
 
     # NEW: an optional job description, so questions fit this exact position.
     job_description = st.text_area(
@@ -181,10 +181,10 @@ if company.strip():
 # Put all the choices in one dictionary, so we can pass them around together.
 interview = {
     "job_title": job_title,
-    "company": company.strip(),  # NEW: empty text if no company was typed
+    # "company": company.strip(),  # NEW: empty text if no company was typed
     "area": area,
     "seniority": seniority,
-    "country": country,
+    # "country": country,
     "interview_type": interview_type,
     "style": style,
     "job_description": job_description.strip(),  # NEW: empty text if none was pasted
