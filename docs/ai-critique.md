@@ -50,3 +50,11 @@ The reviewer read the code and the docs, and also ran my guard on extra inputs.
   testing covered a lot.
 - **Not every point needs fixing now.** I fixed the bugs and quick wins, and noted
   the bigger improvements with their fixes.
+
+
+  In the Findings table, update the "What I'll do" column for the three fixed points:
+
+Finding	Change "What I'll do" to
+2.1 The job description is never checked	Fixed: the check now runs as its own step. Tested: an attack in the job description is blocked
+1.5 "Show system prompts" appears twice	Fixed: the duplicate block was removed
+1.1 A failed call breaks the chat history	Partly fixed: the answer is only saved once a reply arrives, so an empty reply can't break the history. A failed call still shows a red error (no error handling yet)
