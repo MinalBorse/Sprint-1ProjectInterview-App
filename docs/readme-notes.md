@@ -69,7 +69,7 @@ a serif heading font and a welcome card.
 
 | Requirement | Where | Status |
 |---|---|---|
-| Research the kind of interview preparation | README "What it does and why", `docs/research.md` | ✅ |
+| Research the kind of interview preparation | README "What it does and why" | ✅ |
 | Streamlit front end | `app.py` | ✅ |
 | OpenRouter API key | `.env`, read in `llm.py` | ✅ |
 | An allowed model | `openai/gpt-5-mini`, plus nano and gpt-5 | ✅ |
