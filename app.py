@@ -153,28 +153,23 @@ with st.sidebar:
 # The job title goes straight into the system prompt, so someone could type an attack
 # there instead of a real title. check_user_text returns None if it's fine,
 # or a message explaining the problem.
+# ----- Security: check what the user typed, before it goes into any prompt -----
+
+# The job title goes straight into the system prompt, so it could carry an attack.
 job_title_problem = check_user_text(job_title, MAX_JOB_TITLE_CHARS)
 if job_title_problem:
     st.error(f"Job title: {job_title_problem}")
-    # st.stop() ends this run of the script here. Nothing below is drawn,
-    # so no request can be sent to the model.
+    # st.stop() ends this run here: nothing below is drawn or sent.
     st.stop()
 
-    # NEW: check the company too, but only if one was typed, because it's optional.
-    # Without this "if", an empty box would be blocked as "Please type something first."
-    # if company.strip():
-    #     company_problem = check_user_text(company, MAX_COMPANY_CHARS)
-    #     if company_problem:
-    #         st.error(f"Company: {company_problem}")
-    #         st.stop()
-
-    # NEW: an optional job description, so questions fit this exact position.
-    job_description = st.text_area(
-        "Job description (optional)",
-        height=150,
-        max_chars=MAX_JD_CHARS,
-        placeholder="Paste the job ad here",
-    )
+# The job description is also checked, as its own step, NOT inside the job title's
+# "if". It's optional, so it's only checked if something was pasted: without this
+# "if", an empty box would be blocked as "Please type something first."
+if job_description.strip():
+    jd_problem = check_user_text(job_description, MAX_JD_CHARS)
+    if jd_problem:
+        st.error(f"Job description: {jd_problem}")
+        st.stop()
 
 # ----- Collect the choices -----
 
