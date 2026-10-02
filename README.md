@@ -8,9 +8,7 @@ Built for Turing College, AI Engineering, Sprint 1.
 
 ## What it does and why
 
-<!-- A STARTING DRAFT: edit it so every sentence is true for you, and replace
-the [square brackets] with your own reasons. This section is the evidence for
-the research requirement, so it should sound like you. Then delete this comment. -->
+
 
 **Who it's for:** people preparing for a job interview, especially for junior IT
 roles, who want to practise on their own, at their own pace. [Add why this
