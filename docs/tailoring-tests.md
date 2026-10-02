@@ -78,10 +78,13 @@ instead was the right choice.
 3. **Questions can bundle several topics:** with a detailed ad, one question asked
    about six things at once.
 
-   **Fixed:** call_model now takes an optional min_tokens, and the expected
-   questions use 4000, so only this long request gets more room. Checked: all 8
-   questions arrived in 3 runs, and Practice still used 2000.
-
+ **Fixed:** call_model now takes an optional min_tokens, and the expected
+   questions use 4000. Checked: all 8 questions arrived in 3 runs (the log showed
+   max_tokens=4000), and Practice still used 2000.
+   **Fixed:** build_transcript now leaves out the interviewer's last message when
+   nobody answered it, so the assessor never sees the unanswered question. A rule
+   in the assessor prompt is a backup. Checked: after one answer, the report no
+   longer mentioned the unanswered follow-up question.
 
    - Known limitation: the expected questions disappear after clicking elsewhere,
   because they aren't saved in st.session_state. Fix: save them, as the practice

@@ -238,12 +238,25 @@ def for_api(messages):
 def build_transcript(chat):
     """Turn the chat history into plain text for the assessor.
 
-    Only the visible conversation: no system prompt, no hidden kickoff message.
+    Only the visible conversation: no system prompt, no hidden kickoff message,
+    and no final question the candidate never had the chance to answer.
     """
+    # Keep only the messages the user saw. A list comprehension with a filter:
+    # every message that isn't the system prompt and isn't hidden.
+    visible = [m for m in chat if m["role"] != "system" and not m.get("hidden")]
+
+    # NEW: when the candidate clicks "End & get report", the conversation ends
+    # with the interviewer: feedback on the last answer, plus a NEW question that
+    # was never answered. Leave that last message out, so the assessor doesn't
+    # mark the candidate down for a question they didn't get to answer.
+    #   visible[-1] is the LAST item in the list.
+    #   visible[:-1] is a copy of the list WITHOUT its last item.
+    # "visible and ..." first checks the list isn't empty, so [-1] can't fail.
+    if visible and visible[-1]["role"] == "assistant":
+        visible = visible[:-1]
+
     lines = []
-    for message in chat:
-        if message["role"] == "system" or message.get("hidden"):
-            continue  # skip what the user never saw
+    for message in visible:
         # A one-line if/else: "Interviewer" for the model's messages, "Candidate" otherwise.
         speaker = "Interviewer" if message["role"] == "assistant" else "Candidate"
         lines.append(f"{speaker}: {message['content']}")
