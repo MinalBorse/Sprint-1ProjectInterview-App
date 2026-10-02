@@ -17,6 +17,17 @@ FEEDBACK_LENGTH = {
     "Detailed": "detailed. Give thorough feedback: what was strong, what was missing, "
     "and an outline of a stronger answer.",
 }
+# ----- What "one question" means -----
+
+# The prompts say "ask one question", but the model sometimes packs several
+# topics into one long sentence, especially with a detailed job description.
+# This rule defines "one question" clearly: one TOPIC, not one sentence.
+ONE_TOPIC_RULE = """Each interview question covers ONE topic. It may have one short
+follow-up part, but never a list of several things to explain. Keep each question
+under 30 words. If the job description mentions many skills, spread them across
+different questions instead of putting them all into one."""
+
+
 # ----- The mock interview (chat) -----
 
 # The hidden first message: the model needs something to reply to
@@ -208,6 +219,10 @@ suggests another language."""
     # NEW: for the mock interview chat, add how the conversation should run.
     if chat:
         prompt += "\n\n" + INTERVIEW_FLOW
+
+    # NEW: what "one question" means, for every request: the practice question,
+    # the expected questions, and every question in the mock interview.
+    prompt += "\n\n" + ONE_TOPIC_RULE
 
     # Part 3, the same for every technique: the rule against misuse, last,
     # so it's the final thing the model reads.
