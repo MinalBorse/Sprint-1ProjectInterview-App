@@ -8,14 +8,39 @@ Built for Turing College, AI Engineering, Sprint 1.
 
 ## What it does and why
 
-<!-- WRITE THIS SECTION IN YOUR OWN WORDS: it's the research requirement.
-Answer, in a few sentences each:
-- Who is the app for?
-- What's hard about practising for interviews alone?
-- Why three tabs: expected questions, practice, and a full mock interview?
-- Why the settings: the job description, area, seniority, interview type and style?
-- Why compare five feedback techniques?
-Then delete this comment. -->
+<!-- A STARTING DRAFT: edit it so every sentence is true for you, and replace
+the [square brackets] with your own reasons. This section is the evidence for
+the research requirement, so it should sound like you. Then delete this comment. -->
+
+**Who it's for:** people preparing for a job interview, especially for junior IT
+roles, who want to practise on their own, at their own pace. [Add why this
+matters to you, for example your own interview preparation.]
+
+**The problem:** practising alone, it's hard to know whether an answer is good.
+Nobody asks follow-up questions, and nobody says what's missing. Most practice
+questions online are general, not tailored to a specific job.
+
+**Why three tabs:** they match three stages of preparing.
+- **Expected questions:** first, see what you're likely to be asked, and why.
+- **Practice:** then practise one question at a time, getting feedback on each
+  answer, and trying again.
+- **Mock interview:** finally, rehearse a real interview, with follow-up questions
+  that build on your answers, and a report at the end.
+
+**Why these settings:** a good interview depends on the job. The **job
+description** makes the questions fit a specific position (in my tests, 8 of 8
+questions used its details, against 1 of 8 without). **Seniority, interview type
+and area** decide how hard and what kind of questions to ask. The **interviewer
+style** lets a nervous candidate start with a friendly interviewer and move on to
+a strict one. [Add anything you noticed while researching interview formats.]
+
+**Why five feedback techniques:** the course asks which prompt technique works
+best, so I built all five on the same shared prompt, and compared them on the
+same answers. That way the comparison is fair, and my preferred technique
+(few-shot) is backed by evidence, not a guess.
+
+**Why a calm design:** interviews can be stressful, so the app tries to feel like
+a calm place to practise, with a welcome message and a quiet, green look.
 
 ## Features
 
@@ -36,6 +61,27 @@ detailed).
 **Developer settings,** kept apart from the interview choices: the feedback
 technique (five to choose from), the model, max tokens, reasoning effort, and
 "Show system prompts", to see exactly what the model received.
+
+## Course requirements
+
+| Requirement | Where |
+|---|---|
+| Research the kind of interview preparation | "What it does and why" above |
+| A Streamlit front end | `app.py` |
+| An OpenRouter API key, kept out of the code | `.env`, read in `llm.py` |
+| An allowed model | `openai/gpt-5-mini` (with nano and gpt-5 as options) |
+| At least 5 system prompts with different techniques | `prompts.py` |
+| Check which works best | `docs/technique-notes.md`, `docs/length-notes.md` |
+| At least one security guard | `guards.py`, `docs/security-notes.md` |
+
+**Optional tasks:**
+- **Hard:** a full chatbot instead of a one-time call (the Mock interview)
+- **Medium:** all model settings as fields; a job description field; jailbreaking
+  my own app, with results in Excel (`results/redteam-reviewed.xlsx`); a security
+  guard with developer settings kept separate
+- **Easy:** interviewer personas; concise vs detailed feedback; prompts for a
+  domain; tuning model settings and comparing them; an AI critique of the app
+  (`docs/ai-critique.md`); input validation on every text field
 
 ## How to run it
 
@@ -181,3 +227,15 @@ two layers together stopped all of them.
 - **Developer settings are visible to everyone.**
 
 The full list, with the fix for each, is in `docs/readme-notes.md`.
+
+## Notes and evidence
+
+| File | What it covers |
+|---|---|
+| `docs/technique-notes.md` | The five techniques, compared by hand |
+| `docs/length-notes.md` | Concise vs detailed, for all five techniques |
+| `docs/tailoring-tests.md` | Whether the company and job description change the questions |
+| `docs/settings-notes.md` | Reasoning effort, max tokens and the three models |
+| `docs/security-notes.md` | Manual security tests and three rounds of the jailbreak test |
+| `docs/ai-critique.md` | An AI review of the app, my response to each point, and the fixes |
+| `docs/readme-notes.md` | Everything in one place: features, results, decisions and limitations |
