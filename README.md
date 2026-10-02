@@ -1,176 +1,183 @@
-# README notes: everything in one place
+# Interview Practice App
 
-These notes gather every feature, test result and decision, to make writing the
-README easier. The details of each test are in the other files in `docs/`.
+An AI interview coach built with Streamlit and OpenRouter: practise answering
+interview questions, get feedback on every answer, and take a full mock interview
+with a scored report at the end.
 
-## 1. What the app does and why (write this part in my own words)
+Built for Turing College, AI Engineering, Sprint 1.
 
-To answer in the README:
-- Who is it for?
+## What it does and why
+
+<!-- WRITE THIS SECTION IN YOUR OWN WORDS: it's the research requirement.
+Answer, in a few sentences each:
+- Who is the app for?
 - What's hard about practising for interviews alone?
-- Why expected questions, single-question practice and a full mock interview?
-- Why the settings: the job description, area, seniority, interview type, style?
+- Why three tabs: expected questions, practice, and a full mock interview?
+- Why the settings: the job description, area, seniority, interview type and style?
 - Why compare five feedback techniques?
+Then delete this comment. -->
 
-## 2. Features
-
-**For the user (the sidebar):**
-- Job title, job description (optional), professional area, seniority, interview
-  language, interview type, interviewer style (friendly, neutral, strict) and
-  feedback length (concise or detailed)
+## Features
 
 **Three tabs:**
-- **Mock interview:** a full chatbot that remembers the whole conversation, with
-  an end-of-interview report (scores, strengths, improvements, next steps)
-- **Practice:** one question, one answer, one piece of feedback
-- **Expected questions:** 8 likely questions, with why they're asked and a tip
 
-**Developer settings (kept apart from the user's choices):**
-- Feedback technique (five), model, max tokens, reasoning effort
-- "Show system prompts", to see exactly what the model received
+- **Mock interview:** a full chatbot that remembers the whole conversation, follows
+  up on earlier answers, and gives a scored report at the end (scores, strengths,
+  things to improve and next steps), which can be downloaded as JSON.
+- **Practice:** one question, one answer, one piece of feedback.
+- **Expected questions:** 8 likely questions for the role, with why they're asked
+  and a tip for each.
 
-**Look and feel:** a calm dark green theme, a leaf frame drawn in code as an SVG
-(no image file, no licence needed), a solid content panel so text stays readable,
-a serif heading font and a welcome card.
+**Settings for the interview:** job title, job description (optional), professional
+area, seniority, interview language (English or German), interview type,
+interviewer style (friendly, neutral or strict) and feedback length (concise or
+detailed).
 
-## 3. How it's built
+**Developer settings,** kept apart from the interview choices: the feedback
+technique (five to choose from), the model, max tokens, reasoning effort, and
+"Show system prompts", to see exactly what the model received.
+
+## How to run it
+
+**You need:** Python 3.12, [uv](https://docs.astral.sh/uv/), and an OpenRouter API
+key.
+
+1. Clone the repository, and go into its folder.
+2. Install the packages:
+   ```
+   uv sync
+   ```
+3. Create a file called `.env` in the project folder, with your key:
+   ```
+   OPENROUTER_API_KEY=your-key-here
+   ```
+   `.env` is listed in `.gitignore`, so the key is never uploaded.
+4. Start the app:
+   ```
+   uv run streamlit run app.py
+   ```
+   It opens in your browser at http://localhost:8501.
+
+**Other commands:**
+
+| Command | What it does |
+|---|---|
+| `uv run python llm.py` | Checks the connection to the model |
+| `uv run python guards.py` | Runs the guard's quick self-test |
+| `uv run python redteam.py` | The jailbreak test, without API calls (free) |
+| `uv run python redteam.py --model` | The jailbreak test, also sending missed attacks to the model |
+| `uv run ruff check .` and `uv run ruff format .` | Check and format the code |
+
+## How it's built
 
 | File | Its one job |
 |---|---|
 | `app.py` | The page: sidebar, tabs, buttons and the chat |
-| `llm.py` | The only file that calls the model (OpenRouter, openai/gpt-5-mini by default) |
-| `prompts.py` | All the prompts: shared parts, five techniques, rules, the report schema |
+| `llm.py` | The only file that calls the model, through OpenRouter (`openai/gpt-5-mini` by default) |
+| `prompts.py` | All the prompts: the shared parts, five techniques, rules, and the report's JSON schema |
 | `guards.py` | The security guard |
-| `style.py` | The look: theme, leaf frame, fonts, welcome card |
-| `redteam.py` | The jailbreak test, which saves results to Excel |
+| `style.py` | The look: the theme, a leaf frame drawn in code as an SVG, fonts and the welcome card |
+| `redteam.py` | The jailbreak test, which saves its results to Excel |
 | `docs/` | My notes on every test and decision |
-| `results/` | Test outputs (the jailbreak test's Excel files) |
+| `results/` | The jailbreak test's results |
 
-**Key design ideas:**
-- **One file, one job,** so changes stay in one place
-- **The key is never in the code:** it's read from `.env`, which `.gitignore` excludes
-- **Every system prompt has shared parts, and only the technique part changes,**
-  so the five techniques can be compared fairly
-- **The chatbot remembers by sending the whole history every turn,** including
-  the model's own earlier replies (assistant messages). A hidden kickoff message
-  starts it, and its system prompt is fixed at Start
+**Key design decisions:**
+
+- **Every system prompt has shared parts, and only the technique part changes,** so
+  the five techniques can be compared fairly.
+- **The chatbot remembers by sending the whole conversation every turn,** including
+  the model's own earlier replies. A hidden first message starts it, and its system
+  prompt is fixed at the start, so the rules don't change halfway through.
 - **The report uses structured JSON with a strict schema,** from a separate,
-  impartial assessor that treats the transcript as data
-- **`ask_model` has default values** for the model settings, so older code keeps
-  working, and it prints the tokens of every call to the terminal
-- **Ruff** checks and formats the code
+  impartial assessor, not the interviewer. The transcript goes inside tags, marked
+  as data, so an answer can't change the score.
+- **Pasted text is treated as data:** the job description and transcript go inside
+  tags, and any copies of those tags are removed first, in any upper or lower case.
+- **The key is never in the code:** it's read from `.env`.
 
-## 4. The course requirements
+## Prompt techniques, and which works best
 
-| Requirement | Where | Status |
+All five share the same context and rules; only the "how to give feedback" part
+changes.
+
+| Technique | What it does |
+|---|---|
+| Zero-shot | Instructions only: the baseline |
+| Few-shot | Two worked examples of good feedback |
+| Chain-of-thought | Shows its reasoning ("How I assessed your answer") before the feedback |
+| Role prompting | Speaks as a hiring manager, in natural paragraphs |
+| Structured rubric | A 1 to 5 score with a fixed template |
+
+**Findings** (details in `docs/technique-notes.md` and `docs/length-notes.md`):
+
+- All five found the problems in weak answers.
+- **Few-shot followed its format best,** and is my favourite. Its examples nearly
+  double each call's input (about 590 vs 317 tokens), which is the trade-off.
+- The structured rubric was the most consistent, and its score was the same (2/5)
+  in 3 of 4 runs.
+- With the feedback length setting, every technique kept its own format. The freer
+  the format, the more "Detailed" grew: zero-shot about 3.4 times, few-shot about
+  1.1 times.
+
+## Model settings
+
+Tested in `docs/settings-notes.md`:
+
+- **Reasoning effort:** from minimal to high, about 17 times the tokens and 7 times
+  the wait, but the same main advice.
+- **Max tokens includes the hidden thinking:** at 500 with high effort, the model ran
+  out of room while thinking and wrote nothing, but was still billed.
+- **GPT-5 nano used about 4 times the tokens of mini,** and took 2.5 times as long,
+  so the cheapest model per token isn't automatically the cheapest per reply.
+- **No temperature setting:** the GPT-5 models don't support it.
+
+**Defaults:** GPT-5 mini, default reasoning effort, and 2,000 max tokens (4,000 for
+the list of expected questions, so it isn't cut off).
+
+## Security
+
+Two layers (details in `docs/security-notes.md`):
+
+1. **A guard** checks the job title, the job description and every answer before
+   anything is sent: empty, too long, or a known attack phrase. It undoes common
+   disguises first, like invisible characters and look-alike letters.
+2. **The system prompt** only allows interview preparation, and treats pasted text
+   as data.
+
+**Results of the jailbreak test** (22 attacks, 12 realistic innocent answers):
+
+| | First version of the guard | Narrowed guard |
 |---|---|---|
-| Research the kind of interview preparation | README section 1, `docs/research.md` | To write in the README |
-| Streamlit front end | `app.py` | ✅ |
-| OpenRouter API key | `.env`, read in `llm.py` | ✅ |
-| An allowed model | `openai/gpt-5-mini`, plus nano and gpt-5 | ✅ |
-| 5 system prompts with different techniques | `prompts.py` | ✅ |
-| Check which works best | `docs/technique-notes.md`, `docs/length-notes.md` | ✅ |
-| At least one security guard | `guards.py`, `docs/security-notes.md` | ✅ |
+| Attacks blocked by the guard | 10 of 22 (45%) | 14 of 22 (64%) |
+| Real answers wrongly blocked | 4 of 12 (33%) | 0 of 12 (0%) |
 
-**Optional tasks done:**
-- **Hard:** a full chatbot instead of a one-time call (the Mock interview)
-- **Medium:** all model settings as fields; a job description field; jailbreaking
-  my own app with results in Excel; a guard with developer settings kept separate
-- **Easy:** interviewer personas; concise vs detailed; prompts for a domain (area
-  and job title); tuning model settings and comparing them
-- **Partly:** structured JSON (one format so far: the report); input validation
-  (patterns, but no AI check)
+The system prompt stopped every attack the guard missed, in every round, so the
+two layers together stopped all of them.
 
-**Maximum points: reached** (4 medium and 1 hard, where 2 medium and 1 hard are
-needed).
+## What testing found, and what I fixed
 
-## 5. Test results (details in docs/)
+1. **Expected questions were cut off** (2 of 4 runs): that request now gets at least
+   4,000 max tokens.
+2. **The report penalised an unanswered final question:** it's now removed from the
+   transcript in code.
+3. **Questions bundled up to six topics:** "one question" is now defined as one
+   topic, under 30 words.
+4. **The company setting made no difference** to the questions, so I removed it, and
+   rely on the job description, which does. (With a job ad, 8 of 8 questions used
+   its details, against 1 of 8 without.)
+5. **From the AI critique** (`docs/ai-critique.md`): the job description's guard
+   check could never run, tags were only removed in lowercase, and the guard
+   blocked 1 in 3 real IT answers. All three are fixed.
 
-**The five techniques** (`technique-notes.md`): all found the problems in weak
-answers. Few-shot followed its format best, and is my favourite. The structured
-rubric was the most consistent. Role prompting broke its "no bullet points" rule
-twice in the first test (but kept it in all 4 later runs). Zero-shot, the
-baseline, had no consistent format.
+## Known limitations, and what I'd improve
 
-**Tailoring** (`tailoring-tests.md`):
-- With the company set to SAP, no questions mentioned SAP, so I removed the
-  company and country settings. The system prompt got about 40% shorter
-- With a made-up job ad, 8 of 8 and 7 of 7 questions used its details, against
-  1 of 8 without it. The job description works
+- **No friendly error handling:** a failed call shows a technical error.
+- **Practice tends to repeat its most likely question,** since each click has no
+  memory.
+- **The expected questions disappear** after clicking elsewhere.
+- **The guard only catches wording it knows;** an AI-based guard would catch
+  rephrased attacks.
+- **No cost shown to the user,** only token counts in the terminal.
+- **Developer settings are visible to everyone.**
 
-**Concise vs detailed** (`length-notes.md`): the setting worked for all five
-techniques, and every technique kept its own format in both lengths. The freer
-the format, the more Detailed grew: zero-shot about 3.4 times, role prompting 2.6,
-chain-of-thought 1.8, the rubric 1.5, few-shot 1.1. Few-shot's examples nearly
-double its input (about 590 vs 317 tokens).
-
-**Model settings** (`settings-notes.md`):
-- Reasoning effort, minimal to high: about 17 times the tokens and 7 times the
-  wait, but the same main advice
-- Max tokens 500 with high effort: the model ran out of room while thinking, the
-  page showed "None", and it was still billed (448 tokens)
-- Nano used about 4 times the tokens of mini, and took 2.5 times as long
-- GPT-5 is blocked on the course account
-- No temperature setting: the GPT-5 models don't support it
-
-**Security** (`security-notes.md`): the guard blocked 10 of 17 attacks with 0 of 8
-false positives. The system prompt stopped the other 7, in both runs, so the two
-layers together stopped 17 of 17.
-
-## 6. Problems found by testing, and fixed
-
-1. **Expected questions cut off** (2 of 4 runs): gave only that request at least
-   4,000 max tokens, with `min_tokens`
-2. **The report penalised an unanswered final question:** removed it from the
-   transcript in code, with a prompt rule as a backup
-3. **Questions bundled several topics** (up to 6): defined "one question" as one
-   topic, under 30 words, in a shared rule
-4. **Questions came out in German** when the country was Germany: added an
-   explicit language setting and rule
-5. **The report's next steps were written to the interviewer:** added "the report
-   is for the candidate"
-
-**The lesson that kept coming back: anything left unsaid in a prompt gets guessed.**
-
-## 7. Known limitations, and how I'd fix them
-
-1. **No friendly error handling:** a too-low max tokens shows "None", and a
-   blocked model shows a raw traceback. Fix: catch API errors in `llm.py`, and
-   show a clear message
-2. **Practice repeats its most likely question,** since each click has no memory.
-   Fix: remember the questions asked, and ask the model not to repeat them
-3. **The interviewer accepts answers that miss the question.** Fix: a rule to say
-   so kindly, and ask again
-4. **The interview type drifts in long Mock interviews** towards the job
-   description's technical skills. Fix: "the interview type decides the kind of
-   question; the job description decides what it's about"
-5. **The expected questions disappear after other clicks.** Fix: save them in
-   `st.session_state`
-6. **The guard only catches wording it knows.** Fix: an AI-based guard
-7. **No cost shown to the user,** only token counts in the terminal. Fix: the
-   price per call, from OpenRouter's models endpoint
-8. **Only one structured JSON format.** Fix: the expected questions as JSON
-9. **Developer settings are visible to every user.** Fix: show them only in a
-   developer mode
-10. **The styling relies on Streamlit's internal names** (like `.stApp`), which a
-    future version could change
-
-## 8. Lessons for the review
-
-- **Measure before deciding:** the company setting looked useful, but testing
-  showed it did nothing
-- **Change one thing at a time:** the shared prompt parts make the technique
-  comparison fair
-- **Defence in depth:** the guard and the system prompt each caught what the other
-  missed
-- **If code can do it reliably, use code:** the unanswered-question fix
-- **max_tokens includes the hidden thinking,** so a too-low limit fails and still
-  costs money
-- **The cheapest model per token isn't always the cheapest per reply**
-- **Git:** one branch per feature, merge before branching again, commit often,
-  and check `Get-ChildItem` before deleting a folder
-
-- **My false positive test was too easy.** The AI critique found that real IT
-  answers ("developer mode on the Android phone", "an iOS jailbreak", a line
-  starting "System:") are blocked, and German or look-alike-letter attacks get
-  through. Fix: add these cases to redteam.py, and report the honest numbers.
+The full list, with the fix for each, is in `docs/readme-notes.md`.
