@@ -11,8 +11,7 @@ Built for Turing College, AI Engineering, Sprint 1.
 
 
 **Who it's for:** people preparing for a job interview, especially for junior IT
-roles, who want to practise on their own, at their own pace. [Add why this
-matters to you, for example your own interview preparation.]
+roles, who want to practise on their own, at their own pace. For example, I want to use it for own interview preparation.
 
 **The problem:** practising alone, it's hard to know whether an answer is good.
 Nobody asks follow-up questions, and nobody says what's missing. Most practice
@@ -30,7 +29,7 @@ description** makes the questions fit a specific position (in my tests, 8 of 8
 questions used its details, against 1 of 8 without). **Seniority, interview type
 and area** decide how hard and what kind of questions to ask. The **interviewer
 style** lets a nervous candidate start with a friendly interviewer and move on to
-a strict one. [Add anything you noticed while researching interview formats.]
+a strict one.
 
 **Why five feedback techniques:** the course asks which prompt technique works
 best, so I built all five on the same shared prompt, and compared them on the
