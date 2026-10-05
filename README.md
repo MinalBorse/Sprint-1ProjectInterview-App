@@ -8,10 +8,9 @@ Built for Turing College, AI Engineering, Sprint 1.
 
 ## What it does and why
 
-## What it does and why
-
 **Who it's for:** people preparing for a job interview, especially for junior IT
-roles, who want to practise on their own, at their own pace.
+roles, who want to practise on their own, at their own pace. I built it for my
+own interview preparation too.
 
 **The problem:** practising for an interview alone is hard. You can say an answer
 out loud, but you don't know if it's good, or what's missing. Nobody asks a
@@ -40,35 +39,7 @@ a nervous candidate start gently, then practise with a tougher interviewer.
 **Why five feedback techniques:** I wanted to find out, with evidence, which way
 of prompting the model gives the most useful feedback. So I built five techniques
 on the same shared prompt, and compared them on the same answers. Only the
-technique changes, so the comparison is fair.
-
-**Why a calm design:** interviews can be stressful, so the app tries to feel like
-a calm place to practise, with a welcome message and a quiet, green look.
-
-**Who it's for:** people preparing for a job interview, especially for junior IT
-roles, who want to practise on their own, at their own pace. For example, I want to use it for own interview preparation.
-
-**The problem:** practising alone, it's hard to know whether an answer is good.
-Nobody asks follow-up questions, and nobody says what's missing. Most practice
-questions online are general, not tailored to a specific job.
-
-**Why three tabs:** they match three stages of preparing.
-- **Expected questions:** first, see what you're likely to be asked, and why.
-- **Practice:** then practise one question at a time, getting feedback on each
-  answer, and trying again.
-- **Mock interview:** finally, rehearse a real interview, with follow-up questions
-  that build on your answers, and a report at the end.
-
-**Why these settings:** a good interview depends on the job. The **job
-description** makes the questions fit a specific position (in my tests, 8 of 8
-questions used its details, against 1 of 8 without). **Seniority, interview type
-and area** decide how hard and what kind of questions to ask. The **interviewer
-style** lets a nervous candidate start with a friendly interviewer and move on to
-a strict one.
-
-**Why five feedback techniques:** the course asks which prompt technique works
-best, so I built all five on the same shared prompt, and compared them on the
-same answers. That way the comparison is fair, and my preferred technique
+technique changes, so the comparison is fair, and my preferred technique
 (few-shot) is backed by evidence, not a guess.
 
 **Why a calm design:** interviews can be stressful, so the app tries to feel like
@@ -101,12 +72,13 @@ technique (five to choose from), the model, max tokens, reasoning effort, and
 | Research the kind of interview preparation | "What it does and why" above |
 | A Streamlit front end | `app.py` |
 | An OpenRouter API key, kept out of the code | `.env`, read in `llm.py` |
-| An allowed model | `openai/gpt-5-mini` (with nano as an option (gpt-5 is blocked on the course account, so it was removed from the menu)) |
+| An allowed model | `openai/gpt-5-mini`, with `openai/gpt-5-nano` as an option |
 | At least 5 system prompts with different techniques | `prompts.py` |
 | Check which works best | `docs/technique-notes.md`, `docs/length-notes.md` |
 | At least one security guard | `guards.py`, `docs/security-notes.md` |
 
 **Optional tasks:**
+
 - **Hard:** a full chatbot instead of a one-time call (the Mock interview)
 - **Medium:** all model settings as fields; a job description field; jailbreaking
   my own app, with results in Excel (`results/redteam-reviewed.xlsx`); a security
@@ -122,18 +94,18 @@ key.
 
 1. Clone the repository, and go into its folder.
 2. Install the packages:
-   ```
+```
    uv sync
-   ```
+```
 3. Create a file called `.env` in the project folder, with your key:
-   ```
+```
    OPENROUTER_API_KEY=your-key-here
-   ```
+```
    `.env` is listed in `.gitignore`, so the key is never uploaded.
 4. Start the app:
-   ```
+```
    uv run streamlit run app.py
-   ```
+```
    It opens in your browser at http://localhost:8501.
 
 **Other commands:**
@@ -167,8 +139,9 @@ key.
   the model's own earlier replies. A hidden first message starts it, and its system
   prompt is fixed at the start, so the rules don't change halfway through.
 - **The report uses structured JSON with a strict schema,** from a separate,
-  impartial assessor, not the interviewer. The transcript goes inside tags, marked
-  as data, so an answer can't change the score.
+  impartial assessor: the same model, in a separate call with its own instructions.
+  The transcript goes inside tags, marked as data, so an answer can't change the
+  score.
 - **Pasted text is treated as data:** the job description and transcript go inside
   tags, and any copies of those tags are removed first, in any upper or lower case.
 - **The key is never in the code:** it's read from `.env`.
@@ -189,10 +162,10 @@ changes.
 **Findings** (details in `docs/technique-notes.md` and `docs/length-notes.md`):
 
 - All five found the problems in weak answers.
-- **Few-shot followed its format best,** and is my favourite. Its examples nearly
-  double each call's input (about 590 vs 317 tokens), which is the trade-off.
-- The structured rubric was the most consistent, and its score was the same (2/5)
-  in 3 of 4 runs.
+- **Few-shot followed its format best,** and is my preferred technique. Its examples
+  nearly double each call's input (about 590 vs 317 tokens), which is the trade-off.
+- The structured rubric was the most consistent: its score was the same (2/5) in
+  3 of 4 runs.
 - With the feedback length setting, every technique kept its own format. The freer
   the format, the more "Detailed" grew: zero-shot about 3.4 times, few-shot about
   1.1 times.
@@ -207,6 +180,8 @@ Tested in `docs/settings-notes.md`:
   out of room while thinking and wrote nothing, but was still billed.
 - **GPT-5 nano used about 4 times the tokens of mini,** and took 2.5 times as long,
   so the cheapest model per token isn't automatically the cheapest per reply.
+- **GPT-5 is blocked on the course account** by a guardrail, so every call to it
+  failed. I removed it from the model menu, so the app only offers models that work.
 - **No temperature setting:** the GPT-5 models don't support it.
 
 **Defaults:** GPT-5 mini, default reasoning effort, and 2,000 max tokens (4,000 for
