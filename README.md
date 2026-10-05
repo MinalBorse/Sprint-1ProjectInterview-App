@@ -8,8 +8,7 @@ Built for Turing College, AI Engineering, Sprint 1.
 
 ## What it does and why
 
-**Who it's for:** people preparing for a job interview, especially for junior IT
-roles, who want to practise on their own, at their own pace. I built it for my
+**Who it's for:** people preparing for a job interview who want to practise on their own, at their own pace. I built it for my
 own interview preparation too.
 
 **The problem:** practising for an interview alone is hard. You can say an answer
