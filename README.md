@@ -8,7 +8,42 @@ Built for Turing College, AI Engineering, Sprint 1.
 
 ## What it does and why
 
+## What it does and why
 
+**Who it's for:** people preparing for a job interview, especially for junior IT
+roles, who want to practise on their own, at their own pace.
+
+**The problem:** practising for an interview alone is hard. You can say an answer
+out loud, but you don't know if it's good, or what's missing. Nobody asks a
+follow-up question or pushes back on a vague answer, like a real interviewer
+would. And most practice questions online are general, not tailored to a
+specific job or level.
+
+**What the app does:** it acts as an AI interview coach, in three tabs that match
+three stages of preparing:
+
+- **Expected questions:** first, see the questions you're likely to be asked for
+  the role, why interviewers ask them, and a tip for each.
+- **Practice:** then practise one question at a time. Type your answer, get
+  feedback on what worked and what to improve, and try again.
+- **Mock interview:** finally, rehearse a full interview. The interviewer follows
+  up on your answers, and gives you a scored report at the end, with your
+  strengths, what to improve, and next steps.
+
+**Why these settings:** a good interview depends on the job. The **job
+description** makes the questions fit a specific position: in my tests, 8 of 8
+questions used the details of a job ad, against 1 of 8 without one. The
+**seniority, interview type and professional area** decide what kind of questions
+to ask, and how hard. The **interviewer style** (friendly, neutral or strict) lets
+a nervous candidate start gently, then practise with a tougher interviewer.
+
+**Why five feedback techniques:** I wanted to find out, with evidence, which way
+of prompting the model gives the most useful feedback. So I built five techniques
+on the same shared prompt, and compared them on the same answers. Only the
+technique changes, so the comparison is fair.
+
+**Why a calm design:** interviews can be stressful, so the app tries to feel like
+a calm place to practise, with a welcome message and a quiet, green look.
 
 **Who it's for:** people preparing for a job interview, especially for junior IT
 roles, who want to practise on their own, at their own pace. For example, I want to use it for own interview preparation.
