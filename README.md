@@ -66,7 +66,7 @@ technique (five to choose from), the model, max tokens, reasoning effort, and
 | Research the kind of interview preparation | "What it does and why" above |
 | A Streamlit front end | `app.py` |
 | An OpenRouter API key, kept out of the code | `.env`, read in `llm.py` |
-| An allowed model | `openai/gpt-5-mini` (with nano and gpt-5 as options) |
+| An allowed model | `openai/gpt-5-mini` (with nano as an option (gpt-5 is blocked on the course account, so it was removed from the menu)) |
 | At least 5 system prompts with different techniques | `prompts.py` |
 | Check which works best | `docs/technique-notes.md`, `docs/length-notes.md` |
 | At least one security guard | `guards.py`, `docs/security-notes.md` |
