@@ -35,7 +35,6 @@ MODEL = "openai/gpt-5-mini"
 MODELS = {
     "openai/gpt-5-mini": "GPT-5 mini (default, balanced)",
     "openai/gpt-5-nano": "GPT-5 nano (fastest, cheapest)",
-    "openai/gpt-5": "GPT-5 (strongest, may be blocked on the course account)",
 }
 
 # How much the model may think before answering, from least to most.
