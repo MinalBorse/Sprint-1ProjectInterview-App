@@ -1,0 +1,6 @@
+# Only needed to make the demo video, not to run the app.
+# Install:  uv pip install -r requirements-demo.txt   (or: pip install -r requirements-demo.txt)
+# Then, once: python -m playwright install chromium
+playwright
+edge-tts
+static-ffmpeg
