@@ -6,6 +6,7 @@ with a scored report at the end.
 
 Built for Turing College, AI Engineering, Sprint 1.
 
+https://github.com/user-attachments/assets/f5352aa8-01b6-4b2d-8580-0f6074464c01
 ## What it does and why
 
 **Who it's for:** people preparing for a job interview who want to practise on their own, at their own pace. I built it for my
